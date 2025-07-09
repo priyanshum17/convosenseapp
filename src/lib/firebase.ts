@@ -11,11 +11,6 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// A simple check to see if the config is placeholder values or not set.
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'YOUR_API_KEY') {
-  throw new Error('Firebase configuration is not set. Please update the .env file with your Firebase project credentials. You can find these in your Firebase project settings.');
-}
-
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 export const auth = getAuth(app);

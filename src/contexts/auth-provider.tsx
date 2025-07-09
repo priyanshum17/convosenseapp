@@ -6,6 +6,8 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, firestore, googleProvider } from '@/lib/firebase';
 import type { User } from '@/lib/types';
 import { useRouter, usePathname } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+import { FirebaseError } from 'firebase/app';
 
 export type AuthContextType = {
   user: User | null;
@@ -22,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
@@ -72,6 +75,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // onAuthStateChanged will handle the rest
     } catch (error) {
       console.error("Error signing in with Google: ", error);
+      if (error instanceof FirebaseError) {
+        if (error.code === 'auth/configuration-not-found') {
+          toast({
+            variant: 'destructive',
+            title: 'Configuration Error',
+            description: 'Please enable Google Sign-In in your Firebase console and authorize your domain.',
+            duration: 9000,
+          });
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Sign-In Error',
+            description: error.message,
+          });
+        }
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Sign-In Error',
+          description: 'An unexpected error occurred.',
+        });
+      }
     }
   };
 
