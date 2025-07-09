@@ -4,7 +4,7 @@ import type { Message, Explanation } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { getLanguageLabel } from '@/lib/languages';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Smile, Frown, Meh, Languages, Lightbulb, MessageSquareQuote, Gauge, Info } from 'lucide-react';
@@ -73,7 +73,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     <div className={cn('flex items-end gap-2', isSender ? 'justify-end' : 'justify-start')}>
       {!isSender && (
         <Avatar className="w-8 h-8">
-            <AvatarImage src={message.sender.photoURL || undefined} alt={message.sender.name || 'User'} />
             <AvatarFallback>{message.sender.name?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
       )}
@@ -155,7 +154,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       </div>
       {isSender && (
         <Avatar className="w-8 h-8">
-            <AvatarImage src={currentUser.photoURL || undefined} alt={currentUser.name || 'User'} />
             <AvatarFallback>{currentUser.name?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
       )}

@@ -4,16 +4,16 @@ import { useAuth } from '@/hooks/use-auth';
 import { firestore } from '@/lib/firebase';
 import type { PublicUserProfile } from '@/lib/types';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { LogOut, User, Users } from 'lucide-react';
+import { LogOut, Users } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarSeparator, SidebarTrigger } from '../ui/sidebar';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function UserList() {
-  const { user: currentUser, signOut } = useAuth();
+  const { user: currentUser, logout } = useAuth();
   const [users, setUsers] = useState<PublicUserProfile[]>([]);
   const pathname = usePathname();
 
@@ -22,7 +22,7 @@ export default function UserList() {
 
     const q = query(collection(firestore, 'users'), where('uid', '!=', currentUser.uid));
     const unsubscribe = onSnapshot(q, snapshot => {
-      const usersData = snapshot.docs.map(doc => doc.data() as PublicUserProfile).filter(u => u.language); // Only show users who have selected a language
+      const usersData = snapshot.docs.map(doc => doc.data() as PublicUserProfile);
       setUsers(usersData);
     });
 
@@ -56,7 +56,6 @@ export default function UserList() {
                             className="w-full justify-start"
                          >
                             <Avatar className="h-6 w-6">
-                                <AvatarImage src={user.photoURL || undefined} alt={user.name || 'User'} />
                                 <AvatarFallback>{user.name?.charAt(0).toUpperCase()}</AvatarFallback>
                             </Avatar>
                             <span>{user.name}</span>
@@ -70,14 +69,13 @@ export default function UserList() {
         <SidebarFooter className="p-4">
             <div className="flex items-center gap-3">
                  <Avatar>
-                    <AvatarImage src={currentUser.photoURL || undefined} alt={currentUser.name || 'User'}/>
                     <AvatarFallback>{currentUser.name?.charAt(0).toUpperCase()}</AvatarFallback>
                  </Avatar>
                  <div className="flex-1 overflow-hidden">
                     <p className="font-semibold truncate">{currentUser.name}</p>
-                    <p className="text-sm text-muted-foreground truncate">{currentUser.email}</p>
+                    <p className="text-sm text-muted-foreground truncate">{currentUser.language}</p>
                  </div>
-                 <Button variant="ghost" size="icon" onClick={signOut} title="Sign Out">
+                 <Button variant="ghost" size="icon" onClick={logout} title="Sign Out">
                     <LogOut className="w-5 h-5"/>
                  </Button>
             </div>

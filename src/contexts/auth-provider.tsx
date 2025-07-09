@@ -1,24 +1,23 @@
-
 'use client';
 
 import React, { createContext, useState, useEffect, type ReactNode } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut, type User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, firestore, googleProvider } from '@/lib/firebase';
+import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { firestore } from '@/lib/firebase';
 import type { User } from '@/lib/types';
 import { useRouter, usePathname } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { FirebaseError } from 'firebase/app';
+import { v4 as uuidv4 } from 'uuid';
 
 export type AuthContextType = {
   user: User | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
-  signOut: () => Promise<void>;
-  setUserLanguage: (language: string) => Promise<void>;
+  login: (name: string, language: string) => Promise<void>;
+  logout: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const USER_STORAGE_KEY = 'convosense-user';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -28,149 +27,97 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
-        try {
-          const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-          const userDoc = await getDoc(userDocRef);
-          
-          let appUser: User;
-          if (userDoc.exists()) {
-            appUser = userDoc.data() as User;
-          } else {
-            // New user, create a profile
-            const newUserProfile: Omit<User, 'language'> = {
-              uid: firebaseUser.uid,
-              name: firebaseUser.displayName,
-              email: firebaseUser.email,
-              photoURL: firebaseUser.photoURL,
-            };
-            await setDoc(userDocRef, newUserProfile, { merge: true });
-            appUser = newUserProfile as User;
-          }
-          setUser(appUser);
-
-          // Redirection logic
-          if (pathname.startsWith('/login')) {
-              if (appUser.language) {
-                  router.replace('/chat');
-              } else {
-                  router.replace('/select-language');
-              }
-          }
-        } catch (error) {
-          console.error("Firestore error:", error);
-          if (error instanceof FirebaseError) {
-              if (error.code === 'unavailable' || error.message.includes('offline')) {
-                  toast({
-                      variant: 'destructive',
-                      title: 'Firestore Database Not Found',
-                      description: 'Could not connect to the database. Please go to your Firebase Console, click "Firestore Database" in the Build menu, and create a database to continue.',
-                      duration: 9000,
-                  });
-              } else if (error.code === 'permission-denied') {
-                  toast({
-                      variant: 'destructive',
-                      title: 'Firestore Permission Denied',
-                      description: "Your security rules are blocking access to the database. Please update your Firestore rules in the Firebase Console to allow reads/writes for authenticated users.",
-                      duration: 15000,
-                  });
-              } else {
-                    toast({
-                      variant: 'destructive',
-                      title: 'Authentication Error',
-                      description: `An error occurred while fetching your user profile: ${error.message}`,
-                    });
-              }
-          } else {
-             toast({
-                  variant: 'destructive',
-                  title: 'Authentication Error',
-                  description: 'An unexpected error occurred while fetching your user profile.',
-                });
-          }
-          await firebaseSignOut(auth);
-        }
-        
-      } else {
-        setUser(null);
-        if (!pathname.startsWith('/login')) {
-            router.replace('/login');
-        }
+    // Check for user in localStorage on initial load
+    try {
+      const storedUserJson = localStorage.getItem(USER_STORAGE_KEY);
+      if (storedUserJson) {
+        const storedUser = JSON.parse(storedUserJson) as User;
+        setUser(storedUser);
+        // Ensure user is in firestore if they have info in localStorage
+        const userDocRef = doc(firestore, 'users', storedUser.uid);
+        setDoc(userDocRef, storedUser, { merge: true });
       }
+    } catch (error) {
+      console.error("Failed to parse user from localStorage", error);
+      localStorage.removeItem(USER_STORAGE_KEY);
+    } finally {
       setLoading(false);
-    });
+    }
+  }, []);
 
-    return () => unsubscribe();
-  }, [router, pathname, toast]);
-
-  const signInWithGoogle = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-      // onAuthStateChanged will handle the rest
-    } catch (error) {
-      console.error("Error signing in with Google: ", error);
-      if (error instanceof FirebaseError) {
-        if (error.code === 'auth/configuration-not-found') {
-          toast({
-            variant: 'destructive',
-            title: 'Configuration Error',
-            description: 'Please enable Google Sign-In in your Firebase console and authorize your domain.',
-            duration: 9000,
-          });
-        } else if (error.code === 'auth/unauthorized-domain') {
-          toast({
-            variant: 'destructive',
-            title: 'Unauthorized Domain',
-            description: 'This domain is not authorized for sign-in. Please add it to your Firebase project settings.',
-            duration: 9000,
-          });
-        } else {
-          toast({
-            variant: 'destructive',
-            title: 'Sign-In Error',
-            description: error.message,
-          });
-        }
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Sign-In Error',
-          description: 'An unexpected error occurred.',
-        });
+  useEffect(() => {
+    // Redirect logic based on user state
+    if (!loading) {
+      const isAuthPage = pathname === '/';
+      if (user && isAuthPage) {
+        router.replace('/chat');
+      } else if (!user && pathname !== '/') {
+        router.replace('/');
       }
     }
-  };
+  }, [user, loading, pathname, router]);
 
-  const signOut = async () => {
+  // Listen for tab/window close to remove user from active list
+  useEffect(() => {
+    const handleBeforeUnload = async (e: BeforeUnloadEvent) => {
+        if (user) {
+            // This is not guaranteed to run, but it's a good effort for a prototype
+            const userDocRef = doc(firestore, 'users', user.uid);
+            try {
+                await deleteDoc(userDocRef);
+            } catch (error) {
+                console.error("Could not delete user on unload", error);
+            }
+        }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [user]);
+
+  const login = async (name: string, language: string) => {
+    setLoading(true);
     try {
-      await firebaseSignOut(auth);
-      setUser(null);
-      router.push('/login');
+      const newUser: User = {
+        uid: uuidv4(),
+        name,
+        language,
+      };
+
+      const userDocRef = doc(firestore, 'users', newUser.uid);
+      await setDoc(userDocRef, newUser);
+
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
+      setUser(newUser);
+      router.push('/chat');
     } catch (error) {
-      console.error("Error signing out: ", error);
+      console.error("Error logging in: ", error);
+      toast({
+        variant: 'destructive',
+        title: 'Login Error',
+        description: 'Could not create your user profile. Please try again.',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const setUserLanguage = async (language: string) => {
+  const logout = async () => {
     if (user) {
       try {
         const userDocRef = doc(firestore, 'users', user.uid);
-        await setDoc(userDocRef, { language }, { merge: true });
-        setUser(prevUser => prevUser ? { ...prevUser, language } : null);
-        router.push('/chat');
+        await deleteDoc(userDocRef);
       } catch (error) {
-        console.error("Error setting user language: ", error);
-        toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'Failed to save your language preference. Please check your connection and try again.'
-        });
+        console.error("Error removing user from Firestore: ", error);
       }
     }
+    localStorage.removeItem(USER_STORAGE_KEY);
+    setUser(null);
+    router.push('/');
   };
 
-  const value = { user, loading, signInWithGoogle, signOut, setUserLanguage };
+  const value = { user, loading, login, logout };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

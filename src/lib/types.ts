@@ -1,16 +1,13 @@
 export type User = {
   uid: string;
-  name: string | null;
-  email: string | null;
-  photoURL: string | null;
-  language?: string; // Is optional until user sets it
+  name: string;
+  language: string;
 };
 
 // A slimmed-down version for embedding in messages or listing users
 export type PublicUserProfile = {
   uid: string;
-  name: string | null;
-  photoURL: string | null;
+  name: string;
   language: string;
 };
 

@@ -14,7 +14,7 @@ import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import type { PublicUserProfile } from '@/lib/types';
 import TranslationPreviewDialog from './translation-preview-dialog';
 import { useAuth } from '@/hooks/use-auth';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
 
 const FormSchema = z.object({
   message: z.string().min(1, 'Message cannot be empty.'),
@@ -53,7 +53,6 @@ export default function ChatScreen({ chatPartner }: ChatScreenProps) {
     <div className="flex flex-col w-full h-full bg-card">
       <header className="flex items-center gap-4 p-4 border-b">
         <Avatar>
-            <AvatarImage src={chatPartner.photoURL || undefined} alt={chatPartner.name || 'User'} />
             <AvatarFallback>{chatPartner.name?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div>

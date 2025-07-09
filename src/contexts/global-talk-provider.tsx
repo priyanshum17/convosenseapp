@@ -96,7 +96,6 @@ export function ConvoSenseProvider({ children }: { children: ReactNode }) {
         sender: {
             uid: currentUser.uid,
             name: currentUser.name,
-            photoURL: currentUser.photoURL,
         },
         senderLanguage: currentUser.language,
         originalText: text,
