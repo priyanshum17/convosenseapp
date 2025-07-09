@@ -7,8 +7,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <div className="flex h-screen bg-background text-foreground">
         <UserList />
-        <main className="flex-1 flex flex-col h-screen relative">
-            <div className="absolute top-4 left-4 z-20">
+        <main className="flex-1 flex flex-col relative">
+            <div className="absolute top-4 left-4 z-20 md:hidden">
                <SidebarTrigger />
             </div>
             {children}

@@ -10,7 +10,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Smile, Frown, Meh, Languages, Lightbulb, MessageSquareQuote, Gauge, Info } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { toDate } from 'firebase/firestore';
 
 type MessageBubbleProps = {
   message: Message;
@@ -25,15 +24,19 @@ const sentimentIcons = {
 
 // Helper function to convert Firestore Timestamp to Date if necessary
 const getMessageDate = (timestamp: any): Date => {
+    // For live Firestore Timestamp objects
     if (timestamp && typeof timestamp.toDate === 'function') {
       return timestamp.toDate();
     }
-    if (timestamp && timestamp.seconds) {
-        return toDate(timestamp);
+    // For serialized Firestore Timestamps (plain objects)
+    if (timestamp && typeof timestamp.seconds === 'number') {
+        return new Date(timestamp.seconds * 1000);
     }
-    if (!isNaN(new Date(timestamp).getTime())) {
+    // For ISO strings or other date formats that Date constructor can parse
+    if (timestamp && !isNaN(new Date(timestamp).getTime())) {
       return new Date(timestamp);
     }
+    // Fallback to current date
     return new Date();
   };
 

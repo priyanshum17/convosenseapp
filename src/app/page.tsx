@@ -20,11 +20,14 @@ export default function Home() {
     e.preventDefault();
     if (!name || !language) return;
     setIsSubmitting(true);
-    await login(name, language);
-    // The provider will handle redirect, no need to setIsSubmitting(false)
+    const success = await login(name, language);
+    if (!success) {
+      setIsSubmitting(false);
+    }
+    // On success, the AuthProvider's useEffect will handle the redirect.
   };
 
-  if (loading) {
+  if (loading && !isSubmitting) {
      return (
         <div className="flex h-screen w-full items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-4">
@@ -59,7 +62,7 @@ export default function Home() {
             </div>
             <div className="space-y-2">
                 <Label htmlFor="language">Preferred Language</Label>
-                 <Select onValueChange={setLanguage} value={language}>
+                 <Select onValueChange={setLanguage} value={language} required>
                     <SelectTrigger id="language" className="w-full">
                         <SelectValue placeholder="Select a language" />
                     </SelectTrigger>
@@ -78,8 +81,7 @@ export default function Home() {
               disabled={!name || !language || isSubmitting}
               className="w-full text-lg py-6"
             >
-              {isSubmitting && <Loader2 className="animate-spin" />}
-              Join Chat
+              {isSubmitting ? <Loader2 className="animate-spin" /> : 'Join Chat'}
             </Button>
           </form>
         </CardContent>

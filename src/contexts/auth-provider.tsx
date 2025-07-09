@@ -11,9 +11,8 @@ import { v4 as uuidv4 } from 'uuid';
 export type AuthContextType = {
   user: User | null;
   loading: boolean;
-  login: (name: string, language: string) => Promise<void>;
+  login: (name: string, language: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  setUserLanguage: (language: string) => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,16 +47,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!loading) {
-      const isAuthPage = pathname === '/';
-      const isSelectLanguagePage = pathname === '/select-language';
-
       if (user) {
-        if (!user.language && !isSelectLanguagePage) {
-          router.replace('/select-language');
-        } else if (user.language && (isAuthPage || isSelectLanguagePage)) {
+        if (pathname === '/') {
           router.replace('/chat');
         }
-      } else if (!isAuthPage) {
+      } else if (pathname !== '/') {
         router.replace('/');
       }
     }
@@ -80,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
-  const login = async (name: string, language: string) => {
+  const login = async (name: string, language: string): Promise<boolean> => {
     setLoading(true);
     try {
       // Check if username is already taken
@@ -95,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: `The name "${name}" is already in use. Please choose another.`,
         });
         setLoading(false);
-        return;
+        return false;
       }
 
       const newUser: User = {
@@ -109,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
       setUser(newUser);
-      router.push('/chat');
+      return true;
     } catch (error: any) {
       console.error("Error logging in: ", error);
       const description = error.code === 'permission-denied'
@@ -120,34 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: 'Login Error',
         description,
       });
-    } finally {
       setLoading(false);
-    }
-  };
-  
-  const setUserLanguage = async (language: string) => {
-    if (!user) return;
-    const updatedUser = { ...user, language };
-    setLoading(true);
-    try {
-      const userDocRef = doc(firestore, 'users', user.uid);
-      await setDoc(userDocRef, updatedUser, { merge: true });
-      
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      router.push('/chat');
-    } catch (error: any) {
-      console.error("Error setting language: ", error);
-      const description = error.code === 'permission-denied'
-        ? 'Could not save language. Please check your Firestore security rules.'
-        : 'Could not save your language preference.';
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description,
-      });
-    } finally {
-        setLoading(false);
+      return false;
     }
   };
 
@@ -162,10 +130,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     localStorage.removeItem(USER_STORAGE_KEY);
     setUser(null);
-    router.push('/');
   };
 
-  const value = { user, loading, login, logout, setUserLanguage };
+  const value = { user, loading, login, logout };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
