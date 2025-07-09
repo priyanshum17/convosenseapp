@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/contexts/auth-provider';
 
 const fontBody = Inter({
   subsets: ['latin'],
@@ -14,7 +15,7 @@ const fontHeadline = Space_Grotesk({
   variable: '--font-headline',
 });
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'ConvoSense',
   description: 'Seamlessly communicate across languages with real-time translation and sentiment analysis.',
 };
@@ -35,8 +36,10 @@ export default function RootLayout({
         />
       </head>
       <body className={cn('antialiased', fontBody.variable, fontHeadline.variable)}>
-        {children}
-        <Toaster />
+        <AuthProvider>
+          {children}
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

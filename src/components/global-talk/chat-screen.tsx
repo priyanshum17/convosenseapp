@@ -5,14 +5,16 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useConvoSense } from '@/hooks/use-global-talk';
-import { languages } from '@/lib/languages';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageSquare, Send, Sparkles, User, Users } from 'lucide-react';
+import { Send, Sparkles } from 'lucide-react';
 import { MessageBubble } from './message-bubble';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
+import type { PublicUserProfile } from '@/lib/types';
+import TranslationPreviewDialog from './translation-preview-dialog';
+import { useAuth } from '@/hooks/use-auth';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 const FormSchema = z.object({
   message: z.string().min(1, 'Message cannot be empty.'),
@@ -20,8 +22,13 @@ const FormSchema = z.object({
 
 type FormData = z.infer<typeof FormSchema>;
 
-export default function ChatScreen() {
-  const { users, messages, generatePreview, currentUser, setCurrentUser, isSending } = useConvoSense();
+type ChatScreenProps = {
+    chatPartner: PublicUserProfile;
+}
+
+export default function ChatScreen({ chatPartner }: ChatScreenProps) {
+  const { messages, generatePreview, isSending } = useConvoSense();
+  const { user: currentUser } = useAuth();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<FormData>({
@@ -30,7 +37,7 @@ export default function ChatScreen() {
   });
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
-    await generatePreview(data.message);
+    await generatePreview(data.message, chatPartner);
     form.reset();
   };
 
@@ -38,39 +45,19 @@ export default function ChatScreen() {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTo({
         top: scrollAreaRef.current.scrollHeight,
-        behavior: 'smooth',
       });
     }
   }, [messages]);
 
   return (
-    <div className="flex flex-col w-full max-w-4xl h-[90vh] bg-card border rounded-xl shadow-lg">
-      <header className="flex items-center justify-between p-4 border-b">
-        <h1 className="text-2xl font-bold font-headline text-primary flex items-center gap-2">
-            <MessageSquare/>
-            ConvoSense
-        </h1>
-        <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-muted-foreground" />
-          <Select
-            value={currentUser?.id}
-            onValueChange={value => setCurrentUser(users.find(u => u.id === value) || null)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Switch User" />
-            </SelectTrigger>
-            <SelectContent>
-              {users.map(user => (
-                <SelectItem key={user.id} value={user.id}>
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    <span>{user.name}</span>
-                    <span className="text-xs text-muted-foreground">({languages.find(l => l.value === user.language)?.label})</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <div className="flex flex-col w-full h-full bg-card">
+      <header className="flex items-center gap-4 p-4 border-b">
+        <Avatar>
+            <AvatarImage src={chatPartner.photoURL || undefined} alt={chatPartner.name || 'User'} />
+            <AvatarFallback>{chatPartner.name?.charAt(0).toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <div>
+            <h2 className="text-xl font-bold font-headline text-primary">{chatPartner.name}</h2>
         </div>
       </header>
 
@@ -86,7 +73,7 @@ export default function ChatScreen() {
         </div>
       </ScrollArea>
       
-      <footer className="p-4 border-t">
+      <footer className="p-4 border-t bg-background">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-2">
             <FormField
@@ -96,7 +83,7 @@ export default function ChatScreen() {
                 <FormItem className="flex-1">
                   <FormControl>
                     <Textarea
-                      placeholder={`Type your message as ${currentUser?.name || ''}...`}
+                      placeholder={`Type your message to ${chatPartner.name?.split(' ')[0] || ''}...`}
                       {...field}
                       rows={1}
                       className="resize-none"
@@ -113,6 +100,7 @@ export default function ChatScreen() {
           </form>
         </Form>
       </footer>
+      <TranslationPreviewDialog chatPartner={chatPartner}/>
     </div>
   );
 }

@@ -1,6 +1,16 @@
 export type User = {
-  id: string;
-  name: string;
+  uid: string;
+  name: string | null;
+  email: string | null;
+  photoURL: string | null;
+  language?: string; // Is optional until user sets it
+};
+
+// A slimmed-down version for embedding in messages or listing users
+export type PublicUserProfile = {
+  uid: string;
+  name: string | null;
+  photoURL: string | null;
   language: string;
 };
 
@@ -9,7 +19,7 @@ export type Sentiment = 'positive' | 'negative' | 'neutral' | 'unknown';
 export type Explanation = {
   sourceLanguageText: string;
   targetLanguageText: string;
-}
+};
 
 export type LearningNugget = {
   phrase: string;
@@ -28,9 +38,10 @@ export type TranslationDetail = {
 
 export type Message = {
   id: string;
-  sender: User;
+  sender: Omit<PublicUserProfile, 'language'>;
+  senderLanguage: string;
   originalText: string;
-  timestamp: number;
+  timestamp: any; // Firestore timestamp
   sentiment: Sentiment;
   translations: Record<string, TranslationDetail>;
 };

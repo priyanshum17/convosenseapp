@@ -1,15 +1,16 @@
 'use client';
 
 import type { Message, Explanation } from '@/lib/types';
-import { useConvoSense } from '@/hooks/use-global-talk';
+import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { getLanguageLabel } from '@/lib/languages';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Smile, Frown, Meh, Languages, Lightbulb, MessageSquareQuote, Gauge, Info } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { toDate } from 'firebase/firestore';
 
 type MessageBubbleProps = {
   message: Message;
@@ -22,13 +23,28 @@ const sentimentIcons = {
   unknown: <Meh className="w-4 h-4 text-gray-400" />,
 };
 
-export function MessageBubble({ message }: MessageBubbleProps) {
-  const { currentUser } = useConvoSense();
+// Helper function to convert Firestore Timestamp to Date if necessary
+const getMessageDate = (timestamp: any): Date => {
+    if (timestamp && typeof timestamp.toDate === 'function') {
+      return timestamp.toDate();
+    }
+    if (timestamp && timestamp.seconds) {
+        return toDate(timestamp);
+    }
+    if (!isNaN(new Date(timestamp).getTime())) {
+      return new Date(timestamp);
+    }
+    return new Date();
+  };
 
-  if (!currentUser) return null;
+
+export function MessageBubble({ message }: MessageBubbleProps) {
+  const { user: currentUser } = useAuth();
+
+  if (!currentUser || !currentUser.language) return null;
 
   const getExplanationText = (explanation: Explanation, targetLang: string) => {
-    if (!currentUser) return '';
+    if (!currentUser || !currentUser.language) return '';
     // If the viewer's language is the target language of this translation, show the explanation in the target language.
     if (currentUser.language === targetLang) {
       return explanation.targetLanguageText;
@@ -37,9 +53,9 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     return explanation.sourceLanguageText;
   };
 
-  const isSender = message.sender.id === currentUser.id;
+  const isSender = message.sender.uid === currentUser.uid;
   const viewerLang = currentUser.language;
-  const senderLang = message.sender.language;
+  const senderLang = message.senderLanguage;
   const hasTranslations = Object.keys(message.translations).length > 0;
 
   // By default, show original text. If a translation for the viewer's language exists, show that instead.
@@ -50,16 +66,19 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     textToShow = message.translations[viewerLang].translatedText;
     isTranslatedForViewer = true;
   }
+  
+  const messageDate = getMessageDate(message.timestamp);
 
   return (
     <div className={cn('flex items-end gap-2', isSender ? 'justify-end' : 'justify-start')}>
       {!isSender && (
         <Avatar className="w-8 h-8">
-          <AvatarFallback>{message.sender.name.charAt(0).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={message.sender.photoURL || undefined} alt={message.sender.name || 'User'} />
+            <AvatarFallback>{message.sender.name?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
       )}
       <div className={cn('flex w-fit flex-col gap-1', isSender ? 'items-end' : 'items-start')}>
-        <div className={cn('max-w-md w-fit rounded-xl p-3 shadow-md', isSender ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-card text-card-foreground rounded-bl-none')}>
+        <div className={cn('max-w-md w-fit rounded-xl p-3 shadow-md', isSender ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-card text-card-foreground rounded-bl-none border')}>
           {!isSender && <p className="text-xs font-bold mb-1">{message.sender.name}</p>}
           
           <p className="text-sm whitespace-pre-wrap">{textToShow}</p>
@@ -83,7 +102,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
         <div className="flex items-center gap-2 mt-1.5 text-xs opacity-70">
           <span className="flex-grow text-right">
-            {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+            {formatDistanceToNow(messageDate, { addSuffix: true })}
           </span>
           <TooltipProvider>
             <Tooltip>
@@ -99,7 +118,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         </div>
         
         {hasTranslations && (
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion type="single" collapsible className="w-full max-w-md">
             <AccordionItem value="item-1" className="border-b-0">
                 <AccordionTrigger className="flex-none justify-center gap-1 rounded-full bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:no-underline focus-visible:ring-1 focus-visible:ring-ring [&_svg]:h-4 [&_svg]:w-4">
                   <span>Details</span>
@@ -136,7 +155,8 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       </div>
       {isSender && (
         <Avatar className="w-8 h-8">
-          <AvatarFallback>{message.sender.name.charAt(0).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={currentUser.photoURL || undefined} alt={currentUser.name || 'User'} />
+            <AvatarFallback>{currentUser.name?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
       )}
     </div>

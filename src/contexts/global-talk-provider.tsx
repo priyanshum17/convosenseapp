@@ -1,105 +1,142 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import React, { createContext, useState, useCallback } from 'react';
-import type { User, Message, Sentiment, TranslationDetail } from '@/lib/types';
+import React, { createContext, useState, useCallback, useEffect } from 'react';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import type { Message, Sentiment, TranslationDetail, PublicUserProfile } from '@/lib/types';
 import { analyzeMessageSentiment } from '@/ai/flows/analyze-message-sentiment';
 import { translateMessage } from '@/ai/flows/translate-message';
 import { useToast } from '@/hooks/use-toast';
 import { getLanguageLabel } from '@/lib/languages';
+import { useAuth } from '@/hooks/use-auth';
+import { firestore } from '@/lib/firebase';
+import { usePathname } from 'next/navigation';
 
 export type ConvoSenseContextType = {
-  users: User[];
-  addUser: (user: Omit<User, 'id'>) => void;
   messages: Message[];
-  generatePreview: (text: string) => Promise<void>;
+  generatePreview: (text: string, chatPartner: PublicUserProfile) => Promise<void>;
   confirmSendMessage: () => void;
   cancelPreview: () => void;
   previewMessage: Message | null;
-  currentUser: User | null;
-  setCurrentUser: (user: User | null) => void;
-  chatStarted: boolean;
-  startChat: () => void;
   isSending: boolean;
+  chatId: string | null;
 };
 
 export const ConvoSenseContext = createContext<ConvoSenseContextType | undefined>(undefined);
 
 export function ConvoSenseProvider({ children }: { children: ReactNode }) {
-  const [users, setUsers] = useState<User[]>([]);
+  const { user: currentUser } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [chatStarted, setChatStarted] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [previewMessage, setPreviewMessage] = useState<Message | null>(null);
+  const [chatId, setChatId] = useState<string | null>(null);
   const { toast } = useToast();
+  const pathname = usePathname();
 
-  const addUser = useCallback((user: Omit<User, 'id'>) => {
-    const newUser = { ...user, id: `user-${Date.now()}` };
-    setUsers(prev => [...prev, newUser]);
-    if (!currentUser) {
-      setCurrentUser(newUser);
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
+    const pathSegments = pathname.split('/');
+    const chatPartnerUid = pathSegments[pathSegments.length - 1];
+
+    if (!pathname.startsWith('/chat/') || pathSegments.length < 3 || !chatPartnerUid) {
+      setMessages([]);
+      setChatId(null);
+      return;
     }
-  }, [currentUser]);
 
-  const startChat = useCallback(() => {
-    if (users.length >= 2) {
-      setChatStarted(true);
-    }
-  }, [users.length]);
+    const newChatId = [currentUser.uid, chatPartnerUid].sort().join('_');
+    setChatId(newChatId);
 
-  const generatePreview = async (text: string) => {
-    if (!currentUser || text.trim() === '') return;
+    const messagesQuery = query(
+      collection(firestore, 'chats', newChatId, 'messages'),
+      orderBy('timestamp', 'asc')
+    );
+
+    const unsubscribe = onSnapshot(messagesQuery, snapshot => {
+      const newMessages = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Message[];
+      setMessages(newMessages);
+    });
+
+    return () => unsubscribe();
+  }, [pathname, currentUser]);
+
+  const generatePreview = async (text: string, chatPartner: PublicUserProfile) => {
+    if (!currentUser || !currentUser.language || !chatPartner.language || text.trim() === '') return;
 
     setIsSending(true);
     try {
       const sentimentResult = await analyzeMessageSentiment({ message: text });
       
       const translations: Record<string, TranslationDetail> = {};
+      const targetLang = chatPartner.language;
 
-      const otherUserLanguages = [...new Set(users.filter(u => u.id !== currentUser.id).map(u => u.language))];
-
-      for (const lang of otherUserLanguages) {
-        if (lang !== currentUser.language) {
-          try {
-            const translationResult = await translateMessage({
-              text,
-              sourceLanguage: getLanguageLabel(currentUser.language),
-              targetLanguage: getLanguageLabel(lang),
-            });
-            translations[lang] = translationResult;
-          } catch (e) {
-             console.error(`Failed to translate for language ${lang}`, e);
-          }
+      if (targetLang !== currentUser.language) {
+        try {
+          const translationResult = await translateMessage({
+            text,
+            sourceLanguage: getLanguageLabel(currentUser.language),
+            targetLanguage: getLanguageLabel(targetLang),
+          });
+          translations[targetLang] = translationResult;
+        } catch (e) {
+           console.error(`Failed to translate for language ${targetLang}`, e);
+           toast({
+             variant: "destructive",
+             title: "Translation Failed",
+             description: "The AI could not process the translation. Please try again."
+           });
         }
       }
 
-      const newMessage: Message = {
-        id: `msg-${Date.now()}`,
-        sender: currentUser,
+      const newMessage: Omit<Message, 'id' | 'timestamp'> & { timestamp: null } = {
+        sender: {
+            uid: currentUser.uid,
+            name: currentUser.name,
+            photoURL: currentUser.photoURL,
+        },
+        senderLanguage: currentUser.language,
         originalText: text,
-        timestamp: Date.now(),
+        timestamp: null, // Will be replaced by server timestamp
         sentiment: sentimentResult.sentiment.toLowerCase() as Sentiment,
         translations,
       };
 
-      setPreviewMessage(newMessage);
+      setPreviewMessage(newMessage as Message);
     } catch (error) {
       console.error('Failed to generate preview:', error);
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not generate translation preview. AI service may be unavailable.",
-      })
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not generate message preview. AI service may be unavailable.',
+      });
     } finally {
       setIsSending(false);
     }
   };
 
-  const confirmSendMessage = () => {
-    if (previewMessage) {
-      setMessages(prev => [...prev, previewMessage]);
-      setPreviewMessage(null);
+  const confirmSendMessage = async () => {
+    if (previewMessage && chatId) {
+        setIsSending(true);
+        try {
+            await addDoc(collection(firestore, 'chats', chatId, 'messages'), {
+                ...previewMessage,
+                timestamp: serverTimestamp(),
+            });
+            setPreviewMessage(null);
+        } catch (error) {
+            console.error('Error sending message: ', error);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Failed to send message.'
+            });
+        } finally {
+            setIsSending(false);
+        }
     }
   };
 
@@ -107,22 +144,16 @@ export function ConvoSenseProvider({ children }: { children: ReactNode }) {
     setPreviewMessage(null);
   };
 
-
   return (
     <ConvoSenseContext.Provider
       value={{
-        users,
-        addUser,
         messages,
         generatePreview,
         confirmSendMessage,
         cancelPreview,
         previewMessage,
-        currentUser,
-        setCurrentUser,
-        chatStarted,
-        startChat,
         isSending,
+        chatId,
       }}
     >
       {children}
