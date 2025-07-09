@@ -75,7 +75,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const login = async (name: string, language: string): Promise<boolean> => {
-    setLoading(true);
     try {
       // Check if username is already taken
       const usersRef = collection(firestore, 'users');
@@ -88,7 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           title: 'Username Taken',
           description: `The name "${name}" is already in use. Please choose another.`,
         });
-        setLoading(false);
         return false;
       }
 
@@ -114,7 +112,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: 'Login Error',
         description,
       });
-      setLoading(false);
       return false;
     }
   };

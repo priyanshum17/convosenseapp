@@ -16,5 +16,11 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
-  return <ConvoSenseProvider>{children}</ConvoSenseProvider>;
+  return (
+    <ConvoSenseProvider>
+      <div className="h-full w-full">
+        {children}
+      </div>
+    </ConvoSenseProvider>
+  );
 }
