@@ -60,18 +60,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         } catch (error) {
           console.error("Firestore error:", error);
-          if (error instanceof FirebaseError && (error.code === 'unavailable' || error.message.includes('offline'))) {
-              toast({
-                  variant: 'destructive',
-                  title: 'Firestore Database Not Found',
-                  description: 'Could not connect to the database. Please go to your Firebase Console, click "Firestore Database" in the Build menu, and create a database to continue.',
-                  duration: 9000,
-              });
+          if (error instanceof FirebaseError) {
+              if (error.code === 'unavailable' || error.message.includes('offline')) {
+                  toast({
+                      variant: 'destructive',
+                      title: 'Firestore Database Not Found',
+                      description: 'Could not connect to the database. Please go to your Firebase Console, click "Firestore Database" in the Build menu, and create a database to continue.',
+                      duration: 9000,
+                  });
+              } else if (error.code === 'permission-denied') {
+                  toast({
+                      variant: 'destructive',
+                      title: 'Firestore Permission Denied',
+                      description: "Your security rules are blocking access to the database. Please update your Firestore rules in the Firebase Console to allow reads/writes for authenticated users.",
+                      duration: 15000,
+                  });
+              } else {
+                    toast({
+                      variant: 'destructive',
+                      title: 'Authentication Error',
+                      description: `An error occurred while fetching your user profile: ${error.message}`,
+                    });
+              }
           } else {
-                toast({
+             toast({
                   variant: 'destructive',
                   title: 'Authentication Error',
-                  description: 'An error occurred while fetching your user profile.',
+                  description: 'An unexpected error occurred while fetching your user profile.',
                 });
           }
           await firebaseSignOut(auth);
