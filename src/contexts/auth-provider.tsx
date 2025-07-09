@@ -13,6 +13,7 @@ export type AuthContextType = {
   loading: boolean;
   login: (name: string, language: string) => Promise<void>;
   logout: () => Promise<void>;
+  setUserLanguage: (language: string) => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,9 +50,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Redirect logic based on user state
     if (!loading) {
       const isAuthPage = pathname === '/';
-      if (user && isAuthPage) {
-        router.replace('/chat');
-      } else if (!user && pathname !== '/') {
+      const isSelectLanguagePage = pathname === '/select-language';
+
+      if (user) {
+        if (!user.language && !isSelectLanguagePage) {
+          router.replace('/select-language');
+        } else if (user.language && (isAuthPage || isSelectLanguagePage)) {
+          router.replace('/chat');
+        }
+      } else if (!isAuthPage) {
         router.replace('/');
       }
     }
@@ -59,12 +66,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Listen for tab/window close to remove user from active list
   useEffect(() => {
-    const handleBeforeUnload = async (e: BeforeUnloadEvent) => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
         if (user) {
             // This is not guaranteed to run, but it's a good effort for a prototype
             const userDocRef = doc(firestore, 'users', user.uid);
             try {
-                await deleteDoc(userDocRef);
+                // Not using await as this is a best-effort, fire-and-forget attempt
+                deleteDoc(userDocRef);
             } catch (error) {
                 console.error("Could not delete user on unload", error);
             }
@@ -91,15 +99,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
       setUser(newUser);
       router.push('/chat');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error logging in: ", error);
+      const description = error.code === 'permission-denied'
+        ? 'Could not create user. Please check your Firestore security rules.'
+        : 'Could not create your user profile. Please try again.';
       toast({
         variant: 'destructive',
         title: 'Login Error',
-        description: 'Could not create your user profile. Please try again.',
+        description,
       });
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const setUserLanguage = async (language: string) => {
+    if (!user) return;
+    const updatedUser = { ...user, language };
+    try {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      await setDoc(userDocRef, updatedUser, { merge: true });
+      
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      router.push('/chat');
+    } catch (error: any) {
+      console.error("Error setting language: ", error);
+      const description = error.code === 'permission-denied'
+        ? 'Could not save language. Please check your Firestore security rules.'
+        : 'Could not save your language preference.';
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description,
+      });
     }
   };
 
@@ -117,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/');
   };
 
-  const value = { user, loading, login, logout };
+  const value = { user, loading, login, logout, setUserLanguage };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
