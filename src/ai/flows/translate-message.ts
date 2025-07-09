@@ -53,6 +53,8 @@ Source Language: {{{sourceLanguage}}}
 Target Language: {{{targetLanguage}}}
 Text to translate: {{{text}}}
 
+Important: When generating text in {{{targetLanguage}}}, you MUST use its native script (e.g., Devanagari for Hindi, Cyrillic for Russian, Japanese characters for Japanese, etc.).
+
 Please provide the following in your response, ensuring your entire output conforms to the JSON schema:
 1.  A direct translation of the text into the target language.
 2.  A context explanation: Explain any nuances, idioms, or cultural references in the original text and how they were handled in the translation. If there are no special nuances, state that the translation is direct. Provide this explanation in two versions: one in {{{sourceLanguage}}} (for the sender, in the sourceLanguageText field) and one in {{{targetLanguage}}} (for the recipient, in the targetLanguageText field).
