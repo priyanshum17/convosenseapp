@@ -6,11 +6,26 @@ export type User = {
 
 export type Sentiment = 'positive' | 'negative' | 'neutral' | 'unknown';
 
+export type LearningNugget = {
+  phrase: string;
+  translation: string;
+  explanation: string;
+};
+
+export type TranslationDetail = {
+  translatedText: string;
+  source: string;
+  contextExplanation: string;
+  toneExplanation: string;
+  formality: string;
+  learningNugget: LearningNugget;
+};
+
 export type Message = {
   id: string;
   sender: User;
   originalText: string;
   timestamp: number;
   sentiment: Sentiment;
-  translations: Record<string, { text: string; source: string }>;
+  translations: Record<string, TranslationDetail>;
 };

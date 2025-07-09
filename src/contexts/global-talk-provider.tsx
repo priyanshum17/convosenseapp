@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import React, { createContext, useState, useCallback } from 'react';
-import type { User, Message, Sentiment } from '@/lib/types';
+import type { User, Message, Sentiment, TranslationDetail } from '@/lib/types';
 import { analyzeMessageSentiment } from '@/ai/flows/analyze-message-sentiment';
 import { translateMessage } from '@/ai/flows/translate-message';
 import { useToast } from '@/hooks/use-toast';
@@ -12,7 +12,10 @@ export type GlobalTalkContextType = {
   users: User[];
   addUser: (user: Omit<User, 'id'>) => void;
   messages: Message[];
-  sendMessage: (text: string) => Promise<void>;
+  generatePreview: (text: string) => Promise<void>;
+  confirmSendMessage: () => void;
+  cancelPreview: () => void;
+  previewMessage: Message | null;
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
   chatStarted: boolean;
@@ -28,6 +31,7 @@ export function GlobalTalkProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [chatStarted, setChatStarted] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [previewMessage, setPreviewMessage] = useState<Message | null>(null);
   const { toast } = useToast();
 
   const addUser = useCallback((user: Omit<User, 'id'>) => {
@@ -44,31 +48,28 @@ export function GlobalTalkProvider({ children }: { children: ReactNode }) {
     }
   }, [users.length]);
 
-  const sendMessage = async (text: string) => {
+  const generatePreview = async (text: string) => {
     if (!currentUser || text.trim() === '') return;
 
     setIsSending(true);
     try {
       const sentimentResult = await analyzeMessageSentiment({ message: text });
       
-      const translations: Record<string, { text: string; source: string }> = {};
+      const translations: Record<string, TranslationDetail> = {};
 
-      const otherUsers = users.filter(u => u.id !== currentUser.id);
+      const otherUserLanguages = [...new Set(users.filter(u => u.id !== currentUser.id).map(u => u.language))];
 
-      for (const user of otherUsers) {
-        if (user.language !== currentUser.language) {
+      for (const lang of otherUserLanguages) {
+        if (lang !== currentUser.language) {
           try {
             const translationResult = await translateMessage({
               text,
               sourceLanguage: getLanguageLabel(currentUser.language),
-              targetLanguage: getLanguageLabel(user.language),
+              targetLanguage: getLanguageLabel(lang),
             });
-            translations[user.language] = {
-              text: translationResult.translatedText,
-              source: translationResult.source,
-            };
+            translations[lang] = translationResult;
           } catch (e) {
-             console.error(`Failed to translate for ${user.name}`, e);
+             console.error(`Failed to translate for language ${lang}`, e);
           }
         }
       }
@@ -82,18 +83,30 @@ export function GlobalTalkProvider({ children }: { children: ReactNode }) {
         translations,
       };
 
-      setMessages(prev => [...prev, newMessage]);
+      setPreviewMessage(newMessage);
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error('Failed to generate preview:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Could not send message. AI service may be unavailable.",
+        description: "Could not generate translation preview. AI service may be unavailable.",
       })
     } finally {
       setIsSending(false);
     }
   };
+
+  const confirmSendMessage = () => {
+    if (previewMessage) {
+      setMessages(prev => [...prev, previewMessage]);
+      setPreviewMessage(null);
+    }
+  };
+
+  const cancelPreview = () => {
+    setPreviewMessage(null);
+  };
+
 
   return (
     <GlobalTalkContext.Provider
@@ -101,7 +114,10 @@ export function GlobalTalkProvider({ children }: { children: ReactNode }) {
         users,
         addUser,
         messages,
-        sendMessage,
+        generatePreview,
+        confirmSendMessage,
+        cancelPreview,
+        previewMessage,
         currentUser,
         setCurrentUser,
         chatStarted,

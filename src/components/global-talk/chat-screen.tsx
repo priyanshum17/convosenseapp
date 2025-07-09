@@ -21,7 +21,7 @@ const FormSchema = z.object({
 type FormData = z.infer<typeof FormSchema>;
 
 export default function ChatScreen() {
-  const { users, messages, sendMessage, currentUser, setCurrentUser, isSending } = useGlobalTalk();
+  const { users, messages, generatePreview, currentUser, setCurrentUser, isSending } = useGlobalTalk();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<FormData>({
@@ -30,7 +30,7 @@ export default function ChatScreen() {
   });
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
-    await sendMessage(data.message);
+    await generatePreview(data.message);
     form.reset();
   };
 
