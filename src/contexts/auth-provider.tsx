@@ -29,32 +29,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        
-        let appUser: User;
-        if (userDoc.exists()) {
-          appUser = userDoc.data() as User;
-        } else {
-          // New user, create a profile
-          const newUserProfile: Omit<User, 'language'> = {
-            uid: firebaseUser.uid,
-            name: firebaseUser.displayName,
-            email: firebaseUser.email,
-            photoURL: firebaseUser.photoURL,
-          };
-          await setDoc(userDocRef, newUserProfile, { merge: true });
-          appUser = newUserProfile as User;
-        }
-        setUser(appUser);
+        try {
+          const userDocRef = doc(firestore, 'users', firebaseUser.uid);
+          const userDoc = await getDoc(userDocRef);
+          
+          let appUser: User;
+          if (userDoc.exists()) {
+            appUser = userDoc.data() as User;
+          } else {
+            // New user, create a profile
+            const newUserProfile: Omit<User, 'language'> = {
+              uid: firebaseUser.uid,
+              name: firebaseUser.displayName,
+              email: firebaseUser.email,
+              photoURL: firebaseUser.photoURL,
+            };
+            await setDoc(userDocRef, newUserProfile, { merge: true });
+            appUser = newUserProfile as User;
+          }
+          setUser(appUser);
 
-        // Redirection logic
-        if (pathname.startsWith('/login')) {
-            if (appUser.language) {
-                router.replace('/chat');
-            } else {
-                router.replace('/select-language');
-            }
+          // Redirection logic
+          if (pathname.startsWith('/login')) {
+              if (appUser.language) {
+                  router.replace('/chat');
+              } else {
+                  router.replace('/select-language');
+              }
+          }
+        } catch (error) {
+          console.error("Firestore error:", error);
+          if (error instanceof FirebaseError && (error.code === 'unavailable' || error.message.includes('offline'))) {
+              toast({
+                  variant: 'destructive',
+                  title: 'Firestore Connection Error',
+                  description: 'Could not connect to the database. Please check your internet connection and ensure your Firestore database is set up correctly in the Firebase console.',
+                  duration: 9000,
+              });
+          } else {
+                toast({
+                  variant: 'destructive',
+                  title: 'Authentication Error',
+                  description: 'An error occurred while fetching your user profile.',
+                });
+          }
+          await firebaseSignOut(auth);
         }
         
       } else {
@@ -67,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [router, pathname]);
+  }, [router, pathname, toast]);
 
   const signInWithGoogle = async () => {
     try {
@@ -126,6 +145,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.push('/chat');
       } catch (error) {
         console.error("Error setting user language: ", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Failed to save your language preference. Please check your connection and try again.'
+        });
       }
     }
   };
