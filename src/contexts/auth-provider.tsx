@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useState, useEffect, type ReactNode } from 'react';
@@ -62,8 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (error instanceof FirebaseError && (error.code === 'unavailable' || error.message.includes('offline'))) {
               toast({
                   variant: 'destructive',
-                  title: 'Firestore Connection Error',
-                  description: 'Could not connect to the database. Please check your internet connection and ensure your Firestore database is set up correctly in the Firebase console.',
+                  title: 'Firestore Database Not Found',
+                  description: 'Could not connect to the database. Please go to your Firebase Console, click "Firestore Database" in the Build menu, and create a database to continue.',
                   duration: 9000,
               });
           } else {
