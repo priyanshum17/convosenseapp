@@ -58,12 +58,13 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           <AvatarFallback>{message.sender.name.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
       )}
-      <div className={cn('max-w-md w-fit rounded-lg p-3 shadow-sm', isSender ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-card text-card-foreground rounded-bl-none')}>
-        {!isSender && <p className="text-xs font-bold mb-1">{message.sender.name}</p>}
-        
-        <p className="text-sm whitespace-pre-wrap">{textToShow}</p>
-        
-        {isTranslatedForViewer && (
+      <div className={cn('flex w-fit flex-col gap-1', isSender ? 'items-end' : 'items-start')}>
+        <div className={cn('max-w-md w-fit rounded-xl p-3 shadow-md', isSender ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-card text-card-foreground rounded-bl-none')}>
+          {!isSender && <p className="text-xs font-bold mb-1">{message.sender.name}</p>}
+          
+          <p className="text-sm whitespace-pre-wrap">{textToShow}</p>
+          
+          {isTranslatedForViewer && (
            <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -79,24 +80,38 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             </Tooltip>
            </TooltipProvider>
         )}
+
+        <div className="flex items-center gap-2 mt-1.5 text-xs opacity-70">
+          <span className="flex-grow text-right">
+            {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+          </span>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                {sentimentIcons[message.sentiment] || sentimentIcons.unknown}
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Sentiment: {message.sentiment}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        </div>
         
         {hasTranslations && (
-          <Accordion type="single" collapsible className="w-full mt-2 border-t border-current/20 pt-2">
+          <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="item-1" className="border-b-0">
-              <AccordionTrigger className="text-xs py-1 hover:no-underline">
-                <div className="flex items-center gap-1.5">
-                  <Languages className="w-3 h-3" />
-                  View translations & details
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-4 p-1 text-sm">
+                <AccordionTrigger className="flex-none justify-center gap-1 rounded-full bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:no-underline focus-visible:ring-1 focus-visible:ring-ring [&_svg]:h-4 [&_svg]:w-4">
+                  <span>Details</span>
+                </AccordionTrigger>
+              <AccordionContent className={cn("mt-1.5 w-full space-y-4 rounded-xl p-3 text-sm", isSender ? "bg-primary/95 text-primary-foreground" : "bg-muted/80 text-foreground")}>
                  <div>
-                    <h4 className="font-semibold mb-1">Original ({getLanguageLabel(senderLang)})</h4>
+                    <h4 className="font-semibold mb-1 text-xs uppercase tracking-wider">Original ({getLanguageLabel(senderLang)})</h4>
                     <p className="p-2 bg-black/10 rounded-md text-xs">{message.originalText}</p>
                  </div>
                  {Object.entries(message.translations).map(([lang, translation]) => (
-                    <div key={lang}>
-                      <h4 className="font-semibold mb-1">Translation ({getLanguageLabel(lang)})</h4>
+                    <div key={lang} className="pt-2 border-t border-current/10 first:pt-0 first:border-none">
+                      <h4 className="font-semibold mb-1 text-xs uppercase tracking-wider">Translation ({getLanguageLabel(lang)})</h4>
                       <div className="space-y-3 p-2 bg-black/10 rounded-md text-xs">
                         <p className="font-medium italic">"{translation.translatedText}"</p>
                         <div className="space-y-2">
@@ -118,22 +133,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             </AccordionItem>
           </Accordion>
         )}
-
-        <div className="flex items-center gap-2 mt-1.5 text-xs opacity-70">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                {sentimentIcons[message.sentiment] || sentimentIcons.unknown}
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Sentiment: {message.sentiment}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <span className="flex-grow text-right">
-            {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
-          </span>
-        </div>
       </div>
       {isSender && (
         <Avatar className="w-8 h-8">
