@@ -83,6 +83,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             description: 'Please enable Google Sign-In in your Firebase console and authorize your domain.',
             duration: 9000,
           });
+        } else if (error.code === 'auth/unauthorized-domain') {
+          toast({
+            variant: 'destructive',
+            title: 'Unauthorized Domain',
+            description: 'This domain is not authorized for sign-in. Please add it to your Firebase project settings.',
+            duration: 9000,
+          });
         } else {
           toast({
             variant: 'destructive',
