@@ -8,7 +8,7 @@ import { LogOut, Users } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Button } from '../ui/button';
-import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarSeparator, SidebarTrigger } from '../ui/sidebar';
+import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarSeparator } from '../ui/sidebar';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -40,7 +40,6 @@ export default function UserList() {
                 <h1 className="text-2xl font-bold font-headline text-primary flex items-center gap-2">
                     ConvoSense
                 </h1>
-                <SidebarTrigger/>
             </div>
         </SidebarHeader>
         <SidebarContent>

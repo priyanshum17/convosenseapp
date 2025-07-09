@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useState, useEffect, type ReactNode } from 'react';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase';
 import type { User } from '@/lib/types';
 import { useRouter, usePathname } from 'next/navigation';
@@ -28,15 +28,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check for user in localStorage on initial load
     try {
       const storedUserJson = localStorage.getItem(USER_STORAGE_KEY);
       if (storedUserJson) {
         const storedUser = JSON.parse(storedUserJson) as User;
         setUser(storedUser);
-        // Ensure user is in firestore if they have info in localStorage
         const userDocRef = doc(firestore, 'users', storedUser.uid);
-        setDoc(userDocRef, storedUser, { merge: true });
+        setDoc(userDocRef, storedUser, { merge: true }).catch(error => {
+            console.error("Error ensuring user in Firestore:", error);
+        });
       }
     } catch (error) {
       console.error("Failed to parse user from localStorage", error);
@@ -47,7 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Redirect logic based on user state
     if (!loading) {
       const isAuthPage = pathname === '/';
       const isSelectLanguagePage = pathname === '/select-language';
@@ -64,14 +63,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, loading, pathname, router]);
 
-  // Listen for tab/window close to remove user from active list
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    const handleBeforeUnload = () => {
         if (user) {
-            // This is not guaranteed to run, but it's a good effort for a prototype
             const userDocRef = doc(firestore, 'users', user.uid);
             try {
-                // Not using await as this is a best-effort, fire-and-forget attempt
                 deleteDoc(userDocRef);
             } catch (error) {
                 console.error("Could not delete user on unload", error);
@@ -87,6 +83,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (name: string, language: string) => {
     setLoading(true);
     try {
+      // Check if username is already taken
+      const usersRef = collection(firestore, 'users');
+      const q = query(usersRef, where('name', '==', name));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        toast({
+          variant: 'destructive',
+          title: 'Username Taken',
+          description: `The name "${name}" is already in use. Please choose another.`,
+        });
+        setLoading(false);
+        return;
+      }
+
       const newUser: User = {
         uid: uuidv4(),
         name,
@@ -117,6 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setUserLanguage = async (language: string) => {
     if (!user) return;
     const updatedUser = { ...user, language };
+    setLoading(true);
     try {
       const userDocRef = doc(firestore, 'users', user.uid);
       await setDoc(userDocRef, updatedUser, { merge: true });
@@ -134,6 +146,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: 'Error',
         description,
       });
+    } finally {
+        setLoading(false);
     }
   };
 
