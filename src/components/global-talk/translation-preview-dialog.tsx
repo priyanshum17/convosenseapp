@@ -48,11 +48,11 @@ export default function TranslationPreviewDialog() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div className="space-y-2 p-3 rounded-lg border">
                                 <h4 className="font-semibold flex items-center gap-2"><Info className="w-4 h-4 text-primary" /> Context</h4>
-                                <p className="text-muted-foreground">{translation.contextExplanation}</p>
+                                <p className="text-muted-foreground">{translation.contextExplanation.sourceLanguageText}</p>
                             </div>
                             <div className="space-y-2 p-3 rounded-lg border">
                                 <h4 className="font-semibold flex items-center gap-2"><MessageSquareQuote className="w-4 h-4 text-primary" /> Tone</h4>
-                                <p className="text-muted-foreground">{translation.toneExplanation}</p>
+                                <p className="text-muted-foreground">{translation.toneExplanation.sourceLanguageText}</p>
                             </div>
                             <div className="space-y-2 p-3 rounded-lg border">
                                 <h4 className="font-semibold flex items-center gap-2"><Gauge className="w-4 h-4 text-primary" /> Formality</h4>
@@ -63,7 +63,7 @@ export default function TranslationPreviewDialog() {
                                 <p className="text-muted-foreground italic">
                                     <strong>{translation.learningNugget.phrase}</strong> &rarr; <strong>{translation.learningNugget.translation}</strong>
                                 </p>
-                                <p className="text-muted-foreground text-xs">{translation.learningNugget.explanation}</p>
+                                <p className="text-muted-foreground text-xs">{translation.learningNugget.explanation.sourceLanguageText}</p>
                             </div>
                         </div>
                       </AccordionContent>

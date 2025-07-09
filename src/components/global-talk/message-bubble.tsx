@@ -1,6 +1,6 @@
 'use client';
 
-import type { Message } from '@/lib/types';
+import type { Message, Explanation } from '@/lib/types';
 import { useConvoSense } from '@/hooks/use-global-talk';
 import { cn } from '@/lib/utils';
 import { getLanguageLabel } from '@/lib/languages';
@@ -26,6 +26,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const { currentUser } = useConvoSense();
 
   if (!currentUser) return null;
+
+  const getExplanationText = (explanation: Explanation, targetLang: string) => {
+    if (!currentUser) return '';
+    // If the viewer's language is the target language of this translation, show the explanation in the target language.
+    if (currentUser.language === targetLang) {
+      return explanation.targetLanguageText;
+    }
+    // Otherwise (e.g., for the original sender, or a 3rd party), show it in the source language.
+    return explanation.sourceLanguageText;
+  };
 
   const isSender = message.sender.id === currentUser.id;
   const viewerLang = currentUser.language;
@@ -90,14 +100,14 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                       <div className="space-y-3 p-2 bg-black/10 rounded-md text-xs">
                         <p className="font-medium italic">"{translation.translatedText}"</p>
                         <div className="space-y-2">
-                            <p><strong className="flex items-center gap-1"><Info className="w-3 h-3"/>Context:</strong> {translation.contextExplanation}</p>
-                            <p><strong className="flex items-center gap-1"><MessageSquareQuote className="w-3 h-3"/>Tone:</strong> {translation.toneExplanation}</p>
+                            <p><strong className="flex items-center gap-1"><Info className="w-3 h-3"/>Context:</strong> {getExplanationText(translation.contextExplanation, lang)}</p>
+                            <p><strong className="flex items-center gap-1"><MessageSquareQuote className="w-3 h-3"/>Tone:</strong> {getExplanationText(translation.toneExplanation, lang)}</p>
                             <p><strong className="flex items-center gap-1"><Gauge className="w-3 h-3"/>Formality:</strong> <Badge variant={isSender ? "secondary" : "default"} className="text-xs">{translation.formality}</Badge></p>
                             <div className="pt-1 mt-1 border-t border-current/20">
                                 <strong className="flex items-center gap-1"><Lightbulb className="w-3 h-3"/>Learning Nugget:</strong>
                                 <div className="pl-2">
                                     <p><em>{translation.learningNugget.phrase} &rarr; {translation.learningNugget.translation}</em></p>
-                                    <p className="text-xs opacity-80">{translation.learningNugget.explanation}</p>
+                                    <p className="text-xs opacity-80">{getExplanationText(translation.learningNugget.explanation, lang)}</p>
                                 </div>
                             </div>
                         </div>

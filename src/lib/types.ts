@@ -6,17 +6,22 @@ export type User = {
 
 export type Sentiment = 'positive' | 'negative' | 'neutral' | 'unknown';
 
+export type Explanation = {
+  sourceLanguageText: string;
+  targetLanguageText: string;
+}
+
 export type LearningNugget = {
   phrase: string;
   translation: string;
-  explanation: string;
+  explanation: Explanation;
 };
 
 export type TranslationDetail = {
   translatedText: string;
   source: string;
-  contextExplanation: string;
-  toneExplanation: string;
+  contextExplanation: Explanation;
+  toneExplanation: Explanation;
   formality: string;
   learningNugget: LearningNugget;
 };
