@@ -1,6 +1,6 @@
 'use client';
 
-import { useGlobalTalk } from '@/hooks/use-global-talk';
+import { useConvoSense } from '@/hooks/use-global-talk';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -10,7 +10,7 @@ import { Lightbulb, MessageSquareQuote, Gauge, Info, Send } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 
 export default function TranslationPreviewDialog() {
-  const { previewMessage, confirmSendMessage, cancelPreview, isSending, users, currentUser } = useGlobalTalk();
+  const { previewMessage, confirmSendMessage, cancelPreview, isSending, users, currentUser } = useConvoSense();
 
   if (!previewMessage || !currentUser) return null;
 

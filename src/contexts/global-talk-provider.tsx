@@ -8,7 +8,7 @@ import { translateMessage } from '@/ai/flows/translate-message';
 import { useToast } from '@/hooks/use-toast';
 import { getLanguageLabel } from '@/lib/languages';
 
-export type GlobalTalkContextType = {
+export type ConvoSenseContextType = {
   users: User[];
   addUser: (user: Omit<User, 'id'>) => void;
   messages: Message[];
@@ -23,9 +23,9 @@ export type GlobalTalkContextType = {
   isSending: boolean;
 };
 
-export const GlobalTalkContext = createContext<GlobalTalkContextType | undefined>(undefined);
+export const ConvoSenseContext = createContext<ConvoSenseContextType | undefined>(undefined);
 
-export function GlobalTalkProvider({ children }: { children: ReactNode }) {
+export function ConvoSenseProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -109,7 +109,7 @@ export function GlobalTalkProvider({ children }: { children: ReactNode }) {
 
 
   return (
-    <GlobalTalkContext.Provider
+    <ConvoSenseContext.Provider
       value={{
         users,
         addUser,
@@ -126,6 +126,6 @@ export function GlobalTalkProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-    </GlobalTalkContext.Provider>
+    </ConvoSenseContext.Provider>
   );
 }

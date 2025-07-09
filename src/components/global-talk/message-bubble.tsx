@@ -1,10 +1,10 @@
 'use client';
 
 import type { Message } from '@/lib/types';
-import { useGlobalTalk } from '@/hooks/use-global-talk';
+import { useConvoSense } from '@/hooks/use-global-talk';
 import { cn } from '@/lib/utils';
 import { getLanguageLabel } from '@/lib/languages';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Smile, Frown, Meh, Languages, Lightbulb, MessageSquareQuote, Gauge, Info } from 'lucide-react';
@@ -23,7 +23,7 @@ const sentimentIcons = {
 };
 
 export function MessageBubble({ message }: MessageBubbleProps) {
-  const { currentUser } = useGlobalTalk();
+  const { currentUser } = useConvoSense();
 
   if (!currentUser) return null;
 
@@ -45,7 +45,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     <div className={cn('flex items-end gap-2', isSender ? 'justify-end' : 'justify-start')}>
       {!isSender && (
         <Avatar className="w-8 h-8">
-          <AvatarImage src={`https://placehold.co/32x32.png`} alt={message.sender.name} data-ai-hint="person portrait" />
           <AvatarFallback>{message.sender.name.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
       )}
@@ -128,7 +127,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       </div>
       {isSender && (
         <Avatar className="w-8 h-8">
-          <AvatarImage src={`https://placehold.co/32x32.png`} alt={message.sender.name} data-ai-hint="person portrait"/>
           <AvatarFallback>{message.sender.name.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
       )}

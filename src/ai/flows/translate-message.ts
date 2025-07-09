@@ -26,7 +26,7 @@ const LearningNuggetSchema = z.object({
 
 const TranslateMessageOutputSchema = z.object({
   translatedText: z.string().describe('The translated text.'),
-  source: z.string().describe('The translation source. Indicate that it was translated by GlobalTalk.'),
+  source: z.string().describe('The translation source. Indicate that it was translated by ConvoSense.'),
   contextExplanation: z.string().describe('An explanation of how the translation handles the context and connotations of the original message.'),
   toneExplanation: z.string().describe('An explanation of the tone of the translated message and how it compares to the original.'),
   formality: z.string().describe('The formality level of the translated message (e.g., informal, neutral, formal).'),
@@ -66,7 +66,7 @@ const translateMessageFlow = ai.defineFlow(
     const {output} = await translatePrompt(input);
     return {
       ...output!,
-      source: 'GlobalTalk',
+      source: 'ConvoSense',
     };
   }
 );

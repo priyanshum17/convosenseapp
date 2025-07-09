@@ -4,7 +4,7 @@ import React, { useRef, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useGlobalTalk } from '@/hooks/use-global-talk';
+import { useConvoSense } from '@/hooks/use-global-talk';
 import { languages } from '@/lib/languages';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,7 +21,7 @@ const FormSchema = z.object({
 type FormData = z.infer<typeof FormSchema>;
 
 export default function ChatScreen() {
-  const { users, messages, generatePreview, currentUser, setCurrentUser, isSending } = useGlobalTalk();
+  const { users, messages, generatePreview, currentUser, setCurrentUser, isSending } = useConvoSense();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<FormData>({
@@ -48,7 +48,7 @@ export default function ChatScreen() {
       <header className="flex items-center justify-between p-4 border-b">
         <h1 className="text-2xl font-bold font-headline text-primary flex items-center gap-2">
             <MessageSquare/>
-            GlobalTalk
+            ConvoSense
         </h1>
         <div className="flex items-center gap-2">
           <Users className="w-5 h-5 text-muted-foreground" />
