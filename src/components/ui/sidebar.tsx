@@ -53,13 +53,11 @@ const SidebarProvider = React.forwardRef<
   const [openMobile, setOpenMobile] = React.useState(false)
 
   const toggleSidebar = React.useCallback(() => {
-    // Only toggle for mobile
     if (isMobile) {
       setOpenMobile((open) => !open)
     }
   }, [isMobile])
 
-  // Keyboard shortcut only for mobile
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
@@ -100,7 +98,7 @@ const SidebarProvider = React.forwardRef<
             } as React.CSSProperties
           }
           className={cn(
-            "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar",
+            "group/sidebar-wrapper flex min-h-screen w-full has-[[data-variant=inset]]:bg-sidebar",
             className
           )}
           ref={ref}
@@ -147,7 +145,7 @@ const Sidebar = React.forwardRef<
       ref={ref}
       data-sidebar="sidebar"
       className={cn(
-        "hidden md:flex flex-col h-screen bg-sidebar text-sidebar-foreground",
+        "hidden md:flex flex-col h-screen bg-card text-card-foreground",
         "w-[var(--sidebar-width)]",
         className
       )}
@@ -171,7 +169,7 @@ const SidebarTrigger = React.forwardRef<
       data-sidebar="trigger"
       variant="ghost"
       size="icon"
-      className={cn("h-7 w-7 md:hidden", className)} // Hidden on desktop
+      className={cn("h-7 w-7 md:hidden", className)} 
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
@@ -361,7 +359,6 @@ const SidebarGroupAction = React.forwardRef<
       data-sidebar="group-action"
       className={cn(
         "absolute right-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-none ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
-        // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 after:md:hidden",
         "group-data-[collapsible=icon]:hidden",
         className
@@ -507,7 +504,6 @@ const SidebarMenuAction = React.forwardRef<
       data-sidebar="menu-action"
       className={cn(
         "absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-none ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
-        // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 after:md:hidden",
         "peer-data-[size=sm]/menu-button:top-1",
         "peer-data-[size=default]/menu-button:top-1.5",
@@ -550,7 +546,6 @@ const SidebarMenuSkeleton = React.forwardRef<
     showIcon?: boolean
   }
 >(({ className, showIcon = false, ...props }, ref) => {
-  // Random width between 50 to 90%.
   const width = React.useMemo(() => {
     return `${Math.floor(Math.random() * 40) + 50}%`
   }, [])

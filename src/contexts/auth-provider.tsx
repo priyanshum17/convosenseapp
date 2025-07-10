@@ -32,10 +32,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (storedUserJson) {
         const storedUser = JSON.parse(storedUserJson) as User;
         setUser(storedUser);
-        const userDocRef = doc(firestore, 'users', storedUser.uid);
-        setDoc(userDocRef, storedUser, { merge: true }).catch(error => {
-            console.error("Error ensuring user in Firestore:", error);
-        });
       }
     } catch (error) {
       console.error("Failed to parse user from localStorage", error);
@@ -46,37 +42,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!loading) {
-      if (user) {
-        if (pathname === '/') {
-          router.replace('/chat');
-        }
-      } else if (pathname !== '/') {
+    if (loading) return;
+
+    if (user) {
+      // If user is logged in, ensure they are in Firestore
+      const userDocRef = doc(firestore, 'users', user.uid);
+      setDoc(userDocRef, user, { merge: true }).catch(error => {
+          console.error("Error ensuring user in Firestore:", error);
+      });
+
+      // Redirect to chat if on the landing page
+      if (pathname === '/') {
+        router.replace('/chat');
+      }
+    } else {
+      // Redirect to landing page if not logged in and not already there
+      if (pathname !== '/') {
         router.replace('/');
       }
     }
   }, [user, loading, pathname, router]);
 
   useEffect(() => {
-    const handleBeforeUnload = () => {
-        if (user) {
-            const userDocRef = doc(firestore, 'users', user.uid);
+    const handleUnload = async () => {
+        const storedUserJson = localStorage.getItem(USER_STORAGE_KEY);
+        if (storedUserJson) {
+            const storedUser = JSON.parse(storedUserJson) as User;
+            const userDocRef = doc(firestore, 'users', storedUser.uid);
             try {
-                deleteDoc(userDocRef);
+                await deleteDoc(userDocRef);
             } catch (error) {
                 console.error("Could not delete user on unload", error);
             }
         }
     };
-    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    window.addEventListener('beforeunload', handleUnload);
+
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('beforeunload', handleUnload);
     };
-  }, [user]);
+  }, []);
 
   const login = async (name: string, language: string): Promise<boolean> => {
+    setLoading(true);
     try {
-      // Check if username is already taken
       const usersRef = collection(firestore, 'users');
       const q = query(usersRef, where('name', '==', name));
       const querySnapshot = await getDocs(q);
@@ -96,23 +106,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         language,
       };
 
-      const userDocRef = doc(firestore, 'users', newUser.uid);
-      await setDoc(userDocRef, newUser);
-
+      await setDoc(doc(firestore, 'users', newUser.uid), newUser);
+      
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
       setUser(newUser);
       return true;
     } catch (error: any) {
       console.error("Error logging in: ", error);
-      const description = error.code === 'permission-denied'
-        ? 'Could not create user. Please check your Firestore security rules.'
-        : 'Could not create your user profile. Please try again.';
       toast({
         variant: 'destructive',
         title: 'Login Error',
-        description,
+        description: 'Could not create your user profile. Please try again.',
       });
       return false;
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -123,6 +131,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await deleteDoc(userDocRef);
       } catch (error) {
         console.error("Error removing user from Firestore: ", error);
+        toast({
+          variant: 'destructive',
+          title: 'Logout Error',
+          description: 'Could not remove user session. Please try again.',
+        });
       }
     }
     localStorage.removeItem(USER_STORAGE_KEY);
