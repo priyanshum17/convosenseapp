@@ -1,6 +1,6 @@
 'use client';
 
-import { useConvoSense } from '@/hooks/use-global-talk';
+import { useGlobalTalk } from '@/hooks/use-global-talk';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -16,7 +16,7 @@ type TranslationPreviewDialogProps = {
 }
 
 export default function TranslationPreviewDialog({ chatPartner }: TranslationPreviewDialogProps) {
-  const { previewMessage, confirmSendMessage, cancelPreview, isSending } = useConvoSense();
+  const { previewMessage, confirmSendMessage, cancelPreview, isSending } = useGlobalTalk();
   const { user: currentUser } = useAuth();
 
   if (!previewMessage || !currentUser) return null;
@@ -62,7 +62,7 @@ export default function TranslationPreviewDialog({ chatPartner }: TranslationPre
                                 <Badge variant="outline">{previewMessage.translations[targetLanguage].formality}</Badge>
                             </div>
                             <div className="space-y-2 p-3 rounded-lg border bg-amber-50/50">
-                                <h4 className="font-semibold flex items-center gap-2"><Lightbulb className="w-4 h-4 text-accent" /> Learning Nugget</h4>
+                                <h4 className="font-semibold flex items-center gap-2"><Lightbulb className="w-4 h-4 text-primary" /> Learning Nugget</h4>
                                 <p className="text-muted-foreground italic">
                                     <strong>{previewMessage.translations[targetLanguage].learningNugget.phrase}</strong> &rarr; <strong>{previewMessage.translations[targetLanguage].learningNugget.translation}</strong>
                                 </p>

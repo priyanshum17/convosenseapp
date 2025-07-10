@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { firestore } from '@/lib/firebase';
 import { usePathname } from 'next/navigation';
 
-export type ConvoSenseContextType = {
+export type GlobalTalkContextType = {
   messages: Message[];
   generatePreview: (text: string, chatPartner: PublicUserProfile) => Promise<void>;
   confirmSendMessage: () => void;
@@ -22,9 +22,9 @@ export type ConvoSenseContextType = {
   chatId: string | null;
 };
 
-export const ConvoSenseContext = createContext<ConvoSenseContextType | undefined>(undefined);
+export const GlobalTalkContext = createContext<GlobalTalkContextType | undefined>(undefined);
 
-export function ConvoSenseProvider({ children }: { children: ReactNode }) {
+export function GlobalTalkProvider({ children }: { children: ReactNode }) {
   const { user: currentUser } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, setIsSending] = useState(false);
@@ -78,8 +78,8 @@ export function ConvoSenseProvider({ children }: { children: ReactNode }) {
         try {
           const translationResult = await translateMessage({
             text,
-            sourceLanguage: getLanguageLabel(currentUser.language),
-            targetLanguage: getLanguageLabel(targetLang),
+            sourceLanguage: getLanguageLabel(currentUser.language) || currentUser.language,
+            targetLanguage: getLanguageLabel(targetLang) || targetLang,
           });
           translations[targetLang] = translationResult;
         } catch (e) {
@@ -89,6 +89,7 @@ export function ConvoSenseProvider({ children }: { children: ReactNode }) {
              title: "Translation Failed",
              description: "The AI could not process the translation. Please try again."
            });
+           // We can still proceed without the translation
         }
       }
 
@@ -144,7 +145,7 @@ export function ConvoSenseProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ConvoSenseContext.Provider
+    <GlobalTalkContext.Provider
       value={{
         messages,
         generatePreview,
@@ -156,6 +157,6 @@ export function ConvoSenseProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-    </ConvoSenseContext.Provider>
+    </GlobalTalkContext.Provider>
   );
 }

@@ -4,7 +4,7 @@ import React, { useRef, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useConvoSense } from '@/hooks/use-global-talk';
+import { useGlobalTalk } from '@/hooks/use-global-talk';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -27,7 +27,7 @@ type ChatScreenProps = {
 }
 
 export default function ChatScreen({ chatPartner }: ChatScreenProps) {
-  const { messages, generatePreview, isSending } = useConvoSense();
+  const { messages, generatePreview, isSending } = useGlobalTalk();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<FormData>({

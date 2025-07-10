@@ -1,10 +1,10 @@
 import { useContext } from 'react';
-import { ConvoSenseContext, type ConvoSenseContextType } from '@/contexts/global-talk-provider';
+import { GlobalTalkContext, type GlobalTalkContextType } from '@/contexts/global-talk-provider';
 
-export const useConvoSense = (): ConvoSenseContextType => {
-  const context = useContext(ConvoSenseContext);
+export const useGlobalTalk = (): GlobalTalkContextType => {
+  const context = useContext(GlobalTalkContext);
   if (!context) {
-    throw new Error('useConvoSense must be used within a ConvoSenseProvider');
+    throw new Error('useGlobalTalk must be used within a GlobalTalkProvider');
   }
   return context;
 };

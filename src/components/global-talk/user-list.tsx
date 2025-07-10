@@ -40,7 +40,7 @@ export default function UserList() {
           <div className="flex items-center gap-2">
               <Languages className="w-7 h-7 text-primary"/>
               <h1 className="text-2xl font-bold font-headline text-primary">
-                  ConvoSense
+                  GlobalTalk
               </h1>
           </div>
       </header>

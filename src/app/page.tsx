@@ -22,9 +22,14 @@ export default function Home() {
     setError(null);
     if (!name || !language) return;
     setIsSubmitting(true);
-    const success = await login(name, language);
-    if (!success) {
-      setError(`The name "${name}" is already taken. Please choose another.`);
+    try {
+      const success = await login(name, language);
+      if (!success) {
+        setError(`The name "${name}" is already taken. Please choose another.`);
+      }
+    } catch (e) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -34,7 +39,7 @@ export default function Home() {
         <div className="flex h-screen w-full items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="w-12 h-12 animate-spin text-primary" />
-            <p className="text-muted-foreground">Loading ConvoSense...</p>
+            <p className="text-muted-foreground">Loading GlobalTalk...</p>
           </div>
         </div>
       );
@@ -47,7 +52,7 @@ export default function Home() {
           <div className="mx-auto bg-primary text-primary-foreground p-3 rounded-full mb-4 w-fit">
             <Languages className="w-8 h-8" />
           </div>
-          <CardTitle className="text-3xl font-headline">Welcome to ConvoSense</CardTitle>
+          <CardTitle className="text-3xl font-headline">Welcome to GlobalTalk</CardTitle>
           <CardDescription>Enter your name and preferred language to start chatting.</CardDescription>
         </CardHeader>
         <CardContent>

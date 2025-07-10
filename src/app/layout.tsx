@@ -16,7 +16,7 @@ const fontHeadline = Space_Grotesk({
 });
 
 export const metadata = {
-  title: 'ConvoSense',
+  title: 'GlobalTalk',
   description: 'Seamlessly communicate across languages with real-time translation and sentiment analysis.',
 };
 

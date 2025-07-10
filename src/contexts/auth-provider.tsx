@@ -17,7 +17,7 @@ export type AuthContextType = {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USER_STORAGE_KEY = 'convosense-user';
+const USER_STORAGE_KEY = 'globaltalk-user';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -45,18 +45,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (loading) return;
 
     if (user) {
-      // If user is logged in, ensure they are in Firestore
       const userDocRef = doc(firestore, 'users', user.uid);
       setDoc(userDocRef, user, { merge: true }).catch(error => {
           console.error("Error ensuring user in Firestore:", error);
       });
 
-      // Redirect to chat if on the landing page
       if (pathname === '/') {
         router.replace('/chat');
       }
     } else {
-      // Redirect to landing page if not logged in and not already there
       if (pathname !== '/') {
         router.replace('/');
       }
@@ -64,15 +61,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, loading, pathname, router]);
 
   useEffect(() => {
-    const handleUnload = async () => {
+    const handleUnload = async (event: BeforeUnloadEvent) => {
         const storedUserJson = localStorage.getItem(USER_STORAGE_KEY);
         if (storedUserJson) {
             const storedUser = JSON.parse(storedUserJson) as User;
-            const userDocRef = doc(firestore, 'users', storedUser.uid);
-            try {
-                await deleteDoc(userDocRef);
-            } catch (error) {
-                console.error("Could not delete user on unload", error);
+            if (storedUser.uid) {
+                const userDocRef = doc(firestore, 'users', storedUser.uid);
+                try {
+                    await deleteDoc(userDocRef);
+                } catch (error) {
+                    console.error("Could not delete user on unload", error);
+                }
             }
         }
     };
@@ -84,19 +83,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+
   const login = async (name: string, language: string): Promise<boolean> => {
-    setLoading(true);
     try {
       const usersRef = collection(firestore, 'users');
       const q = query(usersRef, where('name', '==', name));
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
-        toast({
-          variant: 'destructive',
-          title: 'Username Taken',
-          description: `The name "${name}" is already in use. Please choose another.`,
-        });
         return false;
       }
 
@@ -119,8 +113,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: 'Could not create your user profile. Please try again.',
       });
       return false;
-    } finally {
-        setLoading(false);
     }
   };
 
