@@ -50,5 +50,9 @@ export default function ChatPage({ params }: { params: { chatId: string } }) {
     return <div className="flex h-full items-center justify-center text-muted-foreground">User not found.</div>;
   }
 
-  return <ChatScreen chatPartner={partner} />;
+  return (
+    <div className="h-full">
+        <ChatScreen chatPartner={partner} />
+    </div>
+  );
 }
