@@ -51,7 +51,7 @@ export default function ChatPage({ params }: { params: { chatId: string } }) {
   }
 
   return (
-    <div className="h-full">
+    <div className="h-full flex flex-col">
         <ChatScreen chatPartner={partner} />
     </div>
   );

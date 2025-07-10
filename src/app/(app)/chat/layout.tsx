@@ -18,7 +18,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <ConvoSenseProvider>
-      <div className="h-full w-full">
+      <div className="h-full w-full flex flex-col">
         {children}
       </div>
     </ConvoSenseProvider>

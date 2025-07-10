@@ -22,21 +22,16 @@ const sentimentIcons = {
   unknown: <Meh className="w-4 h-4 text-gray-400" />,
 };
 
-// Helper function to convert Firestore Timestamp to Date if necessary
 const getMessageDate = (timestamp: any): Date => {
-    // For live Firestore Timestamp objects
     if (timestamp && typeof timestamp.toDate === 'function') {
       return timestamp.toDate();
     }
-    // For serialized Firestore Timestamps (plain objects)
     if (timestamp && typeof timestamp.seconds === 'number') {
         return new Date(timestamp.seconds * 1000);
     }
-    // For ISO strings or other date formats that Date constructor can parse
     if (timestamp && !isNaN(new Date(timestamp).getTime())) {
       return new Date(timestamp);
     }
-    // Fallback to current date
     return new Date();
   };
 
@@ -48,11 +43,9 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
   const getExplanationText = (explanation: Explanation, targetLang: string) => {
     if (!currentUser || !currentUser.language) return '';
-    // If the viewer's language is the target language of this translation, show the explanation in the target language.
     if (currentUser.language === targetLang) {
       return explanation.targetLanguageText;
     }
-    // Otherwise (e.g., for the original sender, or a 3rd party), show it in the source language.
     return explanation.sourceLanguageText;
   };
 
@@ -61,7 +54,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const senderLang = message.senderLanguage;
   const hasTranslations = Object.keys(message.translations).length > 0;
 
-  // By default, show original text. If a translation for the viewer's language exists, show that instead.
   let textToShow = message.originalText;
   let isTranslatedForViewer = false;
 
@@ -73,24 +65,27 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const messageDate = getMessageDate(message.timestamp);
 
   return (
-    <div className={cn('flex items-end gap-2', isSender ? 'justify-end' : 'justify-start')}>
+    <div className={cn('flex items-end gap-3', isSender ? 'justify-end' : 'justify-start')}>
       {!isSender && (
-        <Avatar className="w-8 h-8">
+        <Avatar className="w-9 h-9">
             <AvatarFallback>{message.sender.name?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
       )}
-      <div className={cn('flex w-fit flex-col gap-1', isSender ? 'items-end' : 'items-start')}>
-        <div className={cn('max-w-md w-fit rounded-xl p-3 shadow-md', isSender ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-card text-card-foreground rounded-bl-none border')}>
-          {!isSender && <p className="text-xs font-bold mb-1">{message.sender.name}</p>}
+      <div className={cn('flex w-fit max-w-lg flex-col gap-1', isSender ? 'items-end' : 'items-start')}>
+        <div className={cn(
+            'rounded-2xl p-3 px-4 shadow-sm', 
+            isSender ? 'bg-primary text-primary-foreground rounded-br-lg' : 'bg-secondary text-secondary-foreground rounded-bl-lg'
+        )}>
+          {!isSender && <p className="text-xs font-bold mb-1 text-primary">{message.sender.name}</p>}
           
-          <p className="text-sm whitespace-pre-wrap">{textToShow}</p>
+          <p className="text-base whitespace-pre-wrap">{textToShow}</p>
           
           {isTranslatedForViewer && (
            <TooltipProvider>
-            <Tooltip>
+            <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5 mt-2 text-xs opacity-80 cursor-help border-t border-current/20 pt-1">
-                  <Languages className="w-3 h-3" />
+                <div className="flex items-center gap-1.5 mt-2 text-xs opacity-70 cursor-help border-t border-current/20 pt-1.5">
+                  <Languages className="w-3.5 h-3.5" />
                   <span>Translated from {getLanguageLabel(senderLang)}</span>
                 </div>
               </TooltipTrigger>
@@ -102,12 +97,10 @@ export function MessageBubble({ message }: MessageBubbleProps) {
            </TooltipProvider>
         )}
 
-        <div className="flex items-center gap-2 mt-1.5 text-xs opacity-70">
-          <span className="flex-grow text-right">
-            {formatDistanceToNow(messageDate, { addSuffix: true })}
-          </span>
+        </div>
+        <div className="flex items-center gap-2 px-2 text-xs text-muted-foreground">
           <TooltipProvider>
-            <Tooltip>
+            <Tooltip delayDuration={0}>
               <TooltipTrigger>
                 {sentimentIcons[message.sentiment] || sentimentIcons.unknown}
               </TooltipTrigger>
@@ -116,34 +109,36 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </div>
+          <span>
+            {formatDistanceToNow(messageDate, { addSuffix: true })}
+          </span>
         </div>
         
         {hasTranslations && (
-          <Accordion type="single" collapsible className="w-full max-w-md">
+          <Accordion type="single" collapsible className="w-full max-w-lg">
             <AccordionItem value="item-1" className="border-b-0">
-                <AccordionTrigger className="flex-none justify-center gap-1 rounded-full bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:no-underline focus-visible:ring-1 focus-visible:ring-ring [&_svg]:h-4 [&_svg]:w-4">
-                  <span>Details</span>
+                <AccordionTrigger className="flex-none justify-center gap-1.5 rounded-full bg-secondary/80 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:no-underline focus-visible:ring-1 focus-visible:ring-ring [&_svg]:h-4 [&_svg]:w-4">
+                  <span>Translation Details</span>
                 </AccordionTrigger>
-              <AccordionContent className={cn("mt-1.5 w-full space-y-4 rounded-xl p-3 text-sm", isSender ? "bg-primary/95 text-primary-foreground" : "bg-muted/80 text-foreground")}>
+              <AccordionContent className="mt-1.5 w-full space-y-4 rounded-xl border bg-secondary/50 p-4 text-sm">
                  <div>
                     <h4 className="font-semibold mb-1 text-xs uppercase tracking-wider">Original ({getLanguageLabel(senderLang)})</h4>
-                    <p className="p-2 bg-black/10 rounded-md text-xs">{message.originalText}</p>
+                    <p className="p-2 bg-background rounded-md text-sm">{message.originalText}</p>
                  </div>
                  {Object.entries(message.translations).map(([lang, translation]) => (
-                    <div key={lang} className="pt-2 border-t border-current/10 first:pt-0 first:border-none">
-                      <h4 className="font-semibold mb-1 text-xs uppercase tracking-wider">Translation ({getLanguageLabel(lang)})</h4>
-                      <div className="space-y-3 p-2 bg-black/10 rounded-md text-xs">
-                        <p className="font-medium italic">"{translation.translatedText}"</p>
-                        <div className="space-y-2">
-                            <p><strong className="flex items-center gap-1"><Info className="w-3 h-3"/>Context:</strong> {getExplanationText(translation.contextExplanation, lang)}</p>
-                            <p><strong className="flex items-center gap-1"><MessageSquareQuote className="w-3 h-3"/>Tone:</strong> {getExplanationText(translation.toneExplanation, lang)}</p>
-                            <p><strong className="flex items-center gap-1"><Gauge className="w-3 h-3"/>Formality:</strong> <Badge variant={isSender ? "secondary" : "default"} className="text-xs">{translation.formality}</Badge></p>
-                            <div className="pt-1 mt-1 border-t border-current/20">
-                                <strong className="flex items-center gap-1"><Lightbulb className="w-3 h-3"/>Learning Nugget:</strong>
-                                <div className="pl-2">
+                    <div key={lang} className="pt-3 border-t first:pt-0 first:border-none">
+                      <h4 className="font-semibold mb-2 text-xs uppercase tracking-wider">Translation ({getLanguageLabel(lang)})</h4>
+                      <div className="space-y-3">
+                        <p className="font-medium italic p-2 bg-background rounded-md text-sm">"{translation.translatedText}"</p>
+                        <div className="space-y-2 text-xs">
+                            <p><strong className="flex items-center gap-1.5 font-semibold text-foreground"><Info className="w-3.5 h-3.5 text-primary"/>Context:</strong> {getExplanationText(translation.contextExplanation, lang)}</p>
+                            <p><strong className="flex items-center gap-1.5 font-semibold text-foreground"><MessageSquareQuote className="w-3.5 h-3.5 text-primary"/>Tone:</strong> {getExplanationText(translation.toneExplanation, lang)}</p>
+                            <p><strong className="flex items-center gap-1.5 font-semibold text-foreground"><Gauge className="w-3.5 h-3.5 text-primary"/>Formality:</strong> <Badge variant="outline" className="text-xs">{translation.formality}</Badge></p>
+                            <div className="pt-2 mt-2 border-t">
+                                <strong className="flex items-center gap-1.5 font-semibold text-foreground"><Lightbulb className="w-3.5 h-3.5 text-primary"/>Learning Nugget:</strong>
+                                <div className="pl-2 mt-1">
                                     <p><em>{translation.learningNugget.phrase} &rarr; {translation.learningNugget.translation}</em></p>
-                                    <p className="text-xs opacity-80">{getExplanationText(translation.learningNugget.explanation, lang)}</p>
+                                    <p className="text-muted-foreground">{getExplanationText(translation.learningNugget.explanation, lang)}</p>
                                 </div>
                             </div>
                         </div>
@@ -156,8 +151,8 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         )}
       </div>
       {isSender && (
-        <Avatar className="w-8 h-8">
-            <AvatarFallback>{currentUser.name?.charAt(0).toUpperCase()}</AvatarFallback>
+        <Avatar className="w-9 h-9">
+            <AvatarFallback className="bg-primary text-primary-foreground">{currentUser.name?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
       )}
     </div>

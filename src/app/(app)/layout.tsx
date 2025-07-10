@@ -4,16 +4,11 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider>
-      <div className="flex h-screen bg-background text-foreground">
-        <UserList />
-        <main className="flex-1 flex flex-col relative min-w-0">
-            <div className="absolute top-4 left-4 z-20 md:hidden">
-               <SidebarTrigger />
-            </div>
-            {children}
-        </main>
-      </div>
-    </SidebarProvider>
+    <div className="flex h-screen w-full bg-background text-foreground">
+      <UserList />
+      <main className="flex-1 flex flex-col min-w-0">
+          {children}
+      </main>
+    </div>
   );
 }

@@ -13,8 +13,8 @@ import { MessageBubble } from './message-bubble';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import type { PublicUserProfile } from '@/lib/types';
 import TranslationPreviewDialog from './translation-preview-dialog';
-import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { getLanguageLabel } from '@/lib/languages';
 
 const FormSchema = z.object({
   message: z.string().min(1, 'Message cannot be empty.'),
@@ -28,7 +28,6 @@ type ChatScreenProps = {
 
 export default function ChatScreen({ chatPartner }: ChatScreenProps) {
   const { messages, generatePreview, isSending } = useConvoSense();
-  const { user: currentUser } = useAuth();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<FormData>({
@@ -45,36 +44,40 @@ export default function ChatScreen({ chatPartner }: ChatScreenProps) {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTo({
         top: scrollAreaRef.current.scrollHeight,
+        behavior: 'smooth'
       });
     }
   }, [messages]);
 
   return (
     <div className="flex flex-col w-full h-full bg-card">
-      <header className="flex items-center gap-4 p-4 border-b">
-        <Avatar>
+      <header className="flex items-center gap-4 p-4 border-b bg-background z-10">
+        <Avatar className="h-10 w-10">
             <AvatarFallback>{chatPartner.name?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div>
-            <h2 className="text-xl font-bold font-headline text-primary">{chatPartner.name}</h2>
+            <h2 className="text-xl font-bold font-headline">{chatPartner.name}</h2>
+            <p className="text-sm text-muted-foreground">Speaks {getLanguageLabel(chatPartner.language)}</p>
         </div>
       </header>
 
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        <div className="space-y-6">
-          {messages.length > 0 ? (
-            messages.map(msg => <MessageBubble key={msg.id} message={msg} />)
-          ) : (
-            <div className="text-center text-muted-foreground pt-16">
-              <p>No messages yet. Send one to start the conversation!</p>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
+      <div className="flex-1 relative">
+        <ScrollArea className="absolute inset-0 p-6" ref={scrollAreaRef}>
+          <div className="space-y-6">
+            {messages.length > 0 ? (
+              messages.map(msg => <MessageBubble key={msg.id} message={msg} />)
+            ) : (
+              <div className="text-center text-muted-foreground pt-16">
+                <p>No messages yet. Send one to start the conversation!</p>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
       
       <footer className="p-4 border-t bg-background">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-3">
             <FormField
               control={form.control}
               name="message"
@@ -85,15 +88,15 @@ export default function ChatScreen({ chatPartner }: ChatScreenProps) {
                       placeholder={`Type your message to ${chatPartner.name?.split(' ')[0] || ''}...`}
                       {...field}
                       rows={1}
-                      className="resize-none"
+                      className="min-h-[48px] resize-none"
                       disabled={isSending}
                     />
                   </FormControl>
                 </FormItem>
               )}
             />
-            <Button type="submit" size="icon" disabled={isSending}>
-              {isSending ? <Sparkles className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            <Button type="submit" size="icon" className="h-12 w-12" disabled={isSending}>
+              {isSending ? <Sparkles className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
               <span className="sr-only">Send</span>
             </Button>
           </form>
