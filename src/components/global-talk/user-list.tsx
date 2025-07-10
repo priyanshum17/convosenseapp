@@ -45,7 +45,7 @@ export default function UserList() {
           <div className="flex items-center gap-2">
               <Languages className="w-7 h-7 text-primary"/>
               <h1 className="text-2xl font-bold font-headline text-primary">
-                  GlobalTalk
+                  ConvoSense
               </h1>
           </div>
       </header>
@@ -60,7 +60,7 @@ export default function UserList() {
                         <Link href={`/chat/${getChatId(user.uid)}`} key={user.uid}>
                             <div className={cn(
                                 "flex items-center gap-3 p-2 rounded-lg transition-colors",
-                                isActive ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                                isActive ? "bg-primary/10" : "hover:bg-muted"
                             )}>
                                 <div className="relative">
                                     <Avatar className="h-9 w-9">

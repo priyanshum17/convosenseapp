@@ -6,7 +6,7 @@ export default function ChatPlaceholder() {
       <div className="flex flex-col items-center gap-4 text-center">
         <MessagesSquare className="w-16 h-16 text-primary/80" />
         <div className="flex flex-col items-center">
-            <h2 className="text-2xl font-bold font-headline">Welcome to GlobalTalk</h2>
+            <h2 className="text-2xl font-bold font-headline">Welcome to ConvoSense</h2>
             <p className="text-muted-foreground max-w-sm">
                 Select a user from the sidebar on the left to begin a conversation.
             </p>
