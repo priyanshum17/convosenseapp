@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Message, Explanation } from '@/lib/types';
@@ -7,7 +8,7 @@ import { getLanguageLabel } from '@/lib/languages';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Smile, Frown, Meh, Languages, Lightbulb, MessageSquareQuote, Gauge, Info } from 'lucide-react';
+import { Smile, Frown, Meh, Languages, Lightbulb, MessageSquareQuote, Gauge, Info, ChevronDown } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
@@ -65,60 +66,63 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const messageDate = getMessageDate(message.timestamp);
 
   return (
-    <div className={cn('flex items-end gap-3', isSender ? 'justify-end' : 'justify-start')}>
+    <div className={cn('group/message flex w-full items-start gap-3', isSender ? 'justify-end' : 'justify-start')}>
       {!isSender && (
         <Avatar className="w-9 h-9">
             <AvatarFallback>{message.sender.name?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
       )}
       <div className={cn('flex w-fit max-w-lg flex-col gap-1', isSender ? 'items-end' : 'items-start')}>
-        <div className={cn(
-            'rounded-2xl p-3 px-4 shadow-sm', 
-            isSender ? 'bg-primary text-primary-foreground rounded-br-lg' : 'bg-secondary text-secondary-foreground rounded-bl-lg'
-        )}>
-          {!isSender && <p className="text-xs font-bold mb-1 text-primary">{message.sender.name}</p>}
-          
-          <p className="text-base whitespace-pre-wrap">{textToShow}</p>
-          
-          {isTranslatedForViewer && (
-           <TooltipProvider>
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5 mt-2 text-xs opacity-70 cursor-help border-t border-current/20 pt-1.5">
-                  <Languages className="w-3.5 h-3.5" />
-                  <span>Translated from {getLanguageLabel(senderLang)}</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-sm font-semibold">Original Message:</p>
-                <p>{message.originalText}</p>
-              </TooltipContent>
-            </Tooltip>
-           </TooltipProvider>
-        )}
+        <div className={cn('flex flex-col')}>
+            <div className={cn(
+                'rounded-xl p-3 px-4 shadow-sm', 
+                isSender ? 'bg-primary text-primary-foreground rounded-br-lg' : 'bg-secondary text-secondary-foreground rounded-bl-lg'
+            )}>
+              {!isSender && <p className="text-xs font-bold mb-1 text-primary">{message.sender.name}</p>}
+              
+              <p className="text-base whitespace-pre-wrap">{textToShow}</p>
+              
+              {isTranslatedForViewer && (
+               <TooltipProvider>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1.5 mt-2 text-xs opacity-70 cursor-help border-t border-current/20 pt-1.5">
+                      <Languages className="w-3.5 h-3.5" />
+                      <span>Translated from {getLanguageLabel(senderLang)}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-sm font-semibold">Original Message:</p>
+                    <p>{message.originalText}</p>
+                  </TooltipContent>
+                </Tooltip>
+               </TooltipProvider>
+            )}
+            </div>
 
-        </div>
-        <div className="flex items-center gap-2 px-2 text-xs text-muted-foreground">
-          <TooltipProvider>
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger>
-                {sentimentIcons[message.sentiment] || sentimentIcons.unknown}
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Sentiment: {message.sentiment}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <span>
-            {formatDistanceToNow(messageDate, { addSuffix: true })}
-          </span>
+            <div className="flex items-center justify-end gap-3 px-2 pt-1 text-xs text-muted-foreground">
+                <TooltipProvider>
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger>
+                      {sentimentIcons[message.sentiment] || sentimentIcons.unknown}
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Sentiment: {message.sentiment}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <span>
+                  {formatDistanceToNow(messageDate, { addSuffix: true })}
+                </span>
+            </div>
         </div>
         
         {hasTranslations && (
           <Accordion type="single" collapsible className="w-full max-w-lg">
             <AccordionItem value="item-1" className="border-b-0">
-                <AccordionTrigger className="flex-none justify-center gap-1.5 rounded-full bg-secondary/80 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:no-underline focus-visible:ring-1 focus-visible:ring-ring [&_svg]:h-4 [&_svg]:w-4">
+                <AccordionTrigger className="flex-none justify-center gap-1.5 rounded-full bg-secondary/80 px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:no-underline focus-visible:ring-1 focus-visible:ring-ring">
                   <span>Translation Details</span>
+                  <ChevronDown className="h-3 w-3 transition-transform duration-200" />
                 </AccordionTrigger>
               <AccordionContent className="mt-1.5 w-full space-y-4 rounded-xl border bg-secondary/50 p-4 text-sm">
                  <div>
