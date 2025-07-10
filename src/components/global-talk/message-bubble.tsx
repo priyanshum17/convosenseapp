@@ -1,16 +1,16 @@
 
 'use client';
 
-import type { Message, Explanation } from '@/lib/types';
+import type { Explanation, Message } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { getLanguageLabel } from '@/lib/languages';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Smile, Frown, Meh, Languages, Lightbulb, MessageSquareQuote, Gauge, Info, ChevronDown } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import React from 'react';
 
 type MessageBubbleProps = {
   message: Message;
@@ -39,6 +39,7 @@ const getMessageDate = (timestamp: any): Date => {
 
 export function MessageBubble({ message }: MessageBubbleProps) {
   const { user: currentUser } = useAuth();
+  const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
 
   if (!currentUser || !currentUser.language) return null;
 
@@ -66,17 +67,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const messageDate = getMessageDate(message.timestamp);
 
   return (
-    <div className={cn('group/message flex w-full items-start gap-3', isSender ? 'justify-end' : 'justify-start')}>
-      {!isSender && (
-        <Avatar className="w-9 h-9">
-            <AvatarFallback>{message.sender.name?.charAt(0).toUpperCase()}</AvatarFallback>
-        </Avatar>
-      )}
-      <div className={cn('flex w-fit max-w-lg flex-col gap-1', isSender ? 'items-end' : 'items-start')}>
-        <div className={cn('flex flex-col')}>
+    <div className={cn('group/message flex w-full items-start gap-3', isSender ? 'flex-row-reverse' : 'flex-row')}>
+      <Avatar className="w-9 h-9">
+          <AvatarFallback className={cn(isSender && 'bg-primary text-primary-foreground')}>{message.sender.name?.charAt(0).toUpperCase()}</AvatarFallback>
+      </Avatar>
+
+      <div className={cn('flex w-fit max-w-2xl flex-col gap-1', isSender ? 'items-end' : 'items-start')}>
+        <div className="flex flex-col">
             <div className={cn(
-                'rounded-xl p-3 px-4 shadow-sm', 
-                isSender ? 'bg-primary text-primary-foreground rounded-br-lg' : 'bg-secondary text-secondary-foreground rounded-bl-lg'
+                'rounded-lg p-3 px-4 shadow-sm', 
+                isSender ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-card text-card-foreground border rounded-bl-none'
             )}>
               {!isSender && <p className="text-xs font-bold mb-1 text-primary">{message.sender.name}</p>}
               
@@ -100,7 +100,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             )}
             </div>
 
-            <div className="flex items-center justify-end gap-3 px-2 pt-1 text-xs text-muted-foreground">
+            <div className={cn("flex items-center gap-3 px-2 pt-1 text-xs text-muted-foreground", isSender ? 'justify-end' : 'justify-start')}>
                 <TooltipProvider>
                   <Tooltip delayDuration={0}>
                     <TooltipTrigger>
@@ -111,54 +111,46 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <span>
+                <time dateTime={messageDate.toISOString()}>
                   {formatDistanceToNow(messageDate, { addSuffix: true })}
-                </span>
+                </time>
+                {hasTranslations && (
+                    <button onClick={() => setIsDetailsOpen(!isDetailsOpen)} className="flex items-center gap-1 hover:text-foreground transition-colors">
+                        <span>Details</span>
+                        <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", isDetailsOpen && "rotate-180")} />
+                    </button>
+                )}
             </div>
         </div>
         
-        {hasTranslations && (
-          <Accordion type="single" collapsible className="w-full max-w-lg">
-            <AccordionItem value="item-1" className="border-b-0">
-                <AccordionTrigger className="flex-none justify-center gap-1.5 rounded-full bg-secondary/80 px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:no-underline focus-visible:ring-1 focus-visible:ring-ring">
-                  <span>Translation Details</span>
-                  <ChevronDown className="h-3 w-3 transition-transform duration-200" />
-                </AccordionTrigger>
-              <AccordionContent className="mt-1.5 w-full space-y-4 rounded-xl border bg-secondary/50 p-4 text-sm">
-                 <div>
-                    <h4 className="font-semibold mb-1 text-xs uppercase tracking-wider">Original ({getLanguageLabel(senderLang)})</h4>
-                    <p className="p-2 bg-background rounded-md text-sm">{message.originalText}</p>
-                 </div>
-                 {Object.entries(message.translations).map(([lang, translation]) => (
-                    <div key={lang} className="pt-3 border-t first:pt-0 first:border-none">
-                      <h4 className="font-semibold mb-2 text-xs uppercase tracking-wider">Translation ({getLanguageLabel(lang)})</h4>
-                      <div className="space-y-3">
-                        <p className="font-medium italic p-2 bg-background rounded-md text-sm">"{translation.translatedText}"</p>
-                        <div className="space-y-2 text-xs">
-                            <p><strong className="flex items-center gap-1.5 font-semibold text-foreground"><Info className="w-3.5 h-3.5 text-primary"/>Context:</strong> {getExplanationText(translation.contextExplanation, lang)}</p>
-                            <p><strong className="flex items-center gap-1.5 font-semibold text-foreground"><MessageSquareQuote className="w-3.5 h-3.5 text-primary"/>Tone:</strong> {getExplanationText(translation.toneExplanation, lang)}</p>
-                            <p><strong className="flex items-center gap-1.5 font-semibold text-foreground"><Gauge className="w-3.5 h-3.5 text-primary"/>Formality:</strong> <Badge variant="outline" className="text-xs">{translation.formality}</Badge></p>
-                            <div className="pt-2 mt-2 border-t">
-                                <strong className="flex items-center gap-1.5 font-semibold text-foreground"><Lightbulb className="w-3.5 h-3.5 text-primary"/>Learning Nugget:</strong>
-                                <div className="pl-2 mt-1">
-                                    <p><em>{translation.learningNugget.phrase} &rarr; {translation.learningNugget.translation}</em></p>
-                                    <p className="text-muted-foreground">{getExplanationText(translation.learningNugget.explanation, lang)}</p>
-                                </div>
-                            </div>
-                        </div>
-                      </div>
-                    </div>
-                 ))}
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+        {hasTranslations && isDetailsOpen && (
+           <div className="w-full max-w-2xl space-y-4 rounded-lg border bg-secondary/50 p-4 text-sm animate-accordion-down">
+                <div>
+                   <h4 className="font-semibold mb-1 text-xs uppercase tracking-wider text-muted-foreground">Original ({getLanguageLabel(senderLang)})</h4>
+                   <p className="p-2 bg-background rounded-md text-sm">{message.originalText}</p>
+                </div>
+                {Object.entries(message.translations).map(([lang, translation]) => (
+                   <div key={lang} className="pt-3 border-t">
+                     <h4 className="font-semibold mb-2 text-xs uppercase tracking-wider text-muted-foreground">Translation ({getLanguageLabel(lang)})</h4>
+                     <div className="space-y-3">
+                       <p className="font-medium italic p-2 bg-background rounded-md text-sm">"{translation.translatedText}"</p>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                           <div className="p-2 rounded-md bg-background/50"><strong className="flex items-center gap-1.5 font-semibold text-foreground mb-1"><Info className="w-3.5 h-3.5 text-primary"/>Context:</strong> <span className="text-muted-foreground">{getExplanationText(translation.contextExplanation, lang)}</span></div>
+                           <div className="p-2 rounded-md bg-background/50"><strong className="flex items-center gap-1.5 font-semibold text-foreground mb-1"><MessageSquareQuote className="w-3.5 h-3.5 text-primary"/>Tone:</strong> <span className="text-muted-foreground">{getExplanationText(translation.toneExplanation, lang)}</span></div>
+                           <div className="p-2 rounded-md bg-background/50"><strong className="flex items-center gap-1.5 font-semibold text-foreground mb-1"><Gauge className="w-3.5 h-3.5 text-primary"/>Formality:</strong> <Badge variant="outline" className="text-xs">{translation.formality}</Badge></div>
+                           <div className="p-2 rounded-md bg-background/50 md:col-span-2"><strong className="flex items-center gap-1.5 font-semibold text-foreground mb-1"><Lightbulb className="w-3.5 h-3.5 text-amber-500"/>Learning Nugget:</strong>
+                               <div className="pl-2 mt-1">
+                                   <p className="text-muted-foreground"><em>{translation.learningNugget.phrase} &rarr; {translation.learningNugget.translation}</em></p>
+                                   <p className="text-muted-foreground text-xs mt-0.5">{getExplanationText(translation.learningNugget.explanation, lang)}</p>
+                               </div>
+                           </div>
+                       </div>
+                     </div>
+                   </div>
+                ))}
+           </div>
         )}
       </div>
-      {isSender && (
-        <Avatar className="w-9 h-9">
-            <AvatarFallback className="bg-primary text-primary-foreground">{currentUser.name?.charAt(0).toUpperCase()}</AvatarFallback>
-        </Avatar>
-      )}
     </div>
   );
 }

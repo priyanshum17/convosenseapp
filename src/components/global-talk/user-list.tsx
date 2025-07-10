@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -12,6 +13,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { getLanguageLabel } from '@/lib/languages';
+
+const OnlineIndicator = () => (
+    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full" />
+)
 
 export default function UserList() {
   const { user: currentUser, logout } = useAuth();
@@ -35,7 +40,7 @@ export default function UserList() {
   if (!currentUser) return null;
 
   return (
-    <aside className="hidden md:flex flex-col w-72 border-r bg-secondary/50">
+    <aside className="hidden md:flex flex-col w-72 border-r bg-card">
       <header className="p-4 border-b">
           <div className="flex items-center gap-2">
               <Languages className="w-7 h-7 text-primary"/>
@@ -47,7 +52,7 @@ export default function UserList() {
       
       <div className="flex-1 overflow-y-auto">
         <div className="p-4">
-            <h2 className="text-lg font-semibold flex items-center gap-2 mb-2"><Users className="w-5 h-5"/> Users</h2>
+            <h2 className="text-lg font-semibold flex items-center gap-2 mb-2 text-muted-foreground"><Users className="w-5 h-5"/> Users</h2>
             <nav className="flex flex-col gap-1">
                 {users.map(user => {
                     const isActive = pathname.includes(`/chat/${getChatId(user.uid)}`);
@@ -55,16 +60,19 @@ export default function UserList() {
                         <Link href={`/chat/${getChatId(user.uid)}`} key={user.uid}>
                             <div className={cn(
                                 "flex items-center gap-3 p-2 rounded-lg transition-colors",
-                                isActive ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                                isActive ? "bg-primary/10 text-primary-foreground" : "hover:bg-muted"
                             )}>
-                                <Avatar className="h-9 w-9">
-                                    <AvatarFallback className={cn(isActive ? "bg-primary-foreground text-primary" : "")}>
-                                        {user.name?.charAt(0).toUpperCase()}
-                                    </AvatarFallback>
-                                </Avatar>
+                                <div className="relative">
+                                    <Avatar className="h-9 w-9">
+                                        <AvatarFallback className={cn(isActive && "bg-primary text-primary-foreground")}>
+                                            {user.name?.charAt(0).toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <OnlineIndicator/>
+                                </div>
                                 <div className="flex-1 overflow-hidden">
                                     <p className="font-semibold truncate">{user.name}</p>
-                                    <p className={cn("text-xs truncate", isActive ? "text-primary-foreground/80" : "text-muted-foreground")}>{getLanguageLabel(user.language)}</p>
+                                    <p className={cn("text-xs truncate", isActive ? "text-primary/80" : "text-muted-foreground")}>{getLanguageLabel(user.language)}</p>
                                 </div>
                             </div>
                         </Link>
@@ -76,9 +84,12 @@ export default function UserList() {
       
       <footer className="p-4 border-t">
           <div className="flex items-center gap-3">
-               <Avatar>
-                  <AvatarFallback>{currentUser.name?.charAt(0).toUpperCase()}</AvatarFallback>
-               </Avatar>
+               <div className="relative">
+                    <Avatar>
+                        <AvatarFallback className="bg-primary text-primary-foreground">{currentUser.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <OnlineIndicator/>
+                </div>
                <div className="flex-1 overflow-hidden">
                   <p className="font-semibold truncate">{currentUser.name}</p>
                   <p className="text-sm text-muted-foreground truncate">{getLanguageLabel(currentUser.language)}</p>
@@ -91,3 +102,4 @@ export default function UserList() {
     </aside>
   );
 }
+

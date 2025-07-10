@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef, useEffect } from 'react';
@@ -50,7 +51,7 @@ export default function ChatScreen({ chatPartner }: ChatScreenProps) {
   }, [messages]);
 
   return (
-    <div className="flex flex-col w-full h-full bg-card">
+    <div className="flex flex-col w-full h-full bg-muted/30">
       <header className="flex items-center gap-4 p-4 border-b bg-background z-10">
         <Avatar className="h-10 w-10">
             <AvatarFallback>{chatPartner.name?.charAt(0).toUpperCase()}</AvatarFallback>
@@ -62,8 +63,8 @@ export default function ChatScreen({ chatPartner }: ChatScreenProps) {
       </header>
 
       <div className="flex-1 relative">
-        <ScrollArea className="absolute inset-0 p-6" ref={scrollAreaRef}>
-          <div className="space-y-6">
+        <ScrollArea className="absolute inset-0" ref={scrollAreaRef}>
+          <div className="p-6 space-y-8">
             {messages.length > 0 ? (
               messages.map(msg => <MessageBubble key={msg.id} message={msg} />)
             ) : (
