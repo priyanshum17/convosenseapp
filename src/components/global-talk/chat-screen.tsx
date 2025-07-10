@@ -9,7 +9,7 @@ import { useGlobalTalk } from '@/hooks/use-global-talk';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Sparkles } from 'lucide-react';
+import { Send, Sparkles, MessageSquarePlus } from 'lucide-react';
 import { MessageBubble } from './message-bubble';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import type { PublicUserProfile } from '@/lib/types';
@@ -28,7 +28,7 @@ type ChatScreenProps = {
 }
 
 export default function ChatScreen({ chatPartner }: ChatScreenProps) {
-  const { messages, generatePreview, isSending } = useGlobalTalk();
+  const { messages, generatePreview, sendMessage, isSending } = useGlobalTalk();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<FormData>({
@@ -36,9 +36,23 @@ export default function ChatScreen({ chatPartner }: ChatScreenProps) {
     defaultValues: { message: '' },
   });
 
-  const onSubmit: SubmitHandler<FormData> = async (data) => {
+  const onPreview: SubmitHandler<FormData> = async (data) => {
     await generatePreview(data.message, chatPartner);
     form.reset();
+  };
+
+  const onQuickSend: SubmitHandler<FormData> = async (data) => {
+    await sendMessage(data.message, chatPartner);
+    form.reset();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (form.getValues('message').trim()) {
+        form.handleSubmit(onQuickSend)();
+      }
+    }
   };
 
   useEffect(() => {
@@ -54,6 +68,7 @@ export default function ChatScreen({ chatPartner }: ChatScreenProps) {
     <div className="flex flex-col w-full h-full bg-muted/30">
       <header className="flex items-center gap-4 p-4 border-b bg-background z-10">
         <Avatar className="h-10 w-10">
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full" />
             <AvatarFallback>{chatPartner.name?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div>
@@ -78,7 +93,7 @@ export default function ChatScreen({ chatPartner }: ChatScreenProps) {
       
       <footer className="p-4 border-t bg-background">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-3">
+          <form className="flex items-start gap-3">
             <FormField
               control={form.control}
               name="message"
@@ -86,8 +101,9 @@ export default function ChatScreen({ chatPartner }: ChatScreenProps) {
                 <FormItem className="flex-1">
                   <FormControl>
                     <Textarea
-                      placeholder={`Type your message to ${chatPartner.name?.split(' ')[0] || ''}...`}
+                      placeholder={`Type your message to ${chatPartner.name?.split(' ')[0] || ''}... (Shift + Enter for new line)`}
                       {...field}
+                      onKeyDown={handleKeyDown}
                       rows={1}
                       className="min-h-[48px] resize-none"
                       disabled={isSending}
@@ -96,9 +112,13 @@ export default function ChatScreen({ chatPartner }: ChatScreenProps) {
                 </FormItem>
               )}
             />
-            <Button type="submit" size="icon" className="h-12 w-12" disabled={isSending}>
+            <Button type="button" size="icon" className="h-12 w-12" disabled={isSending || !form.watch('message')} onClick={form.handleSubmit(onQuickSend)}>
               {isSending ? <Sparkles className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
               <span className="sr-only">Send</span>
+            </Button>
+            <Button type="button" variant="outline" size="icon" className="h-12 w-12" disabled={isSending || !form.watch('message')} onClick={form.handleSubmit(onPreview)}>
+              <MessageSquarePlus className="w-5 h-5" />
+              <span className="sr-only">Review and Send</span>
             </Button>
           </form>
         </Form>

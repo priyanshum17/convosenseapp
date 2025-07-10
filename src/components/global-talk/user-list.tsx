@@ -60,7 +60,7 @@ export default function UserList() {
                         <Link href={`/chat/${getChatId(user.uid)}`} key={user.uid}>
                             <div className={cn(
                                 "flex items-center gap-3 p-2 rounded-lg transition-colors",
-                                isActive ? "bg-primary/10 text-primary-foreground" : "hover:bg-muted"
+                                isActive ? "bg-primary/10 text-primary" : "hover:bg-muted"
                             )}>
                                 <div className="relative">
                                     <Avatar className="h-9 w-9">
@@ -71,7 +71,7 @@ export default function UserList() {
                                     <OnlineIndicator/>
                                 </div>
                                 <div className="flex-1 overflow-hidden">
-                                    <p className="font-semibold truncate">{user.name}</p>
+                                    <p className={cn("font-semibold truncate", isActive ? "text-primary" : "text-card-foreground")}>{user.name}</p>
                                     <p className={cn("text-xs truncate", isActive ? "text-primary/80" : "text-muted-foreground")}>{getLanguageLabel(user.language)}</p>
                                 </div>
                             </div>
@@ -102,4 +102,3 @@ export default function UserList() {
     </aside>
   );
 }
-

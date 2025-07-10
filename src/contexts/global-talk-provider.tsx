@@ -15,6 +15,7 @@ import { usePathname } from 'next/navigation';
 export type GlobalTalkContextType = {
   messages: Message[];
   generatePreview: (text: string, chatPartner: PublicUserProfile) => Promise<void>;
+  sendMessage: (text: string, chatPartner: PublicUserProfile) => Promise<void>;
   confirmSendMessage: () => void;
   cancelPreview: () => void;
   previewMessage: Message | null;
@@ -64,48 +65,54 @@ export function GlobalTalkProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, [pathname, currentUser]);
 
-  const generatePreview = async (text: string, chatPartner: PublicUserProfile) => {
-    if (!currentUser || !currentUser.language || !chatPartner.language || text.trim() === '') return;
 
+  const createMessagePayload = async (text: string, chatPartner: PublicUserProfile) => {
+    if (!currentUser || !currentUser.language || !chatPartner.language || text.trim() === '') return null;
+    
+    const sentimentResult = await analyzeMessageSentiment({ message: text });
+    
+    const translations: Record<string, TranslationDetail> = {};
+    const targetLang = chatPartner.language;
+
+    if (targetLang !== currentUser.language) {
+      try {
+        const translationResult = await translateMessage({
+          text,
+          sourceLanguage: getLanguageLabel(currentUser.language) || currentUser.language,
+          targetLanguage: getLanguageLabel(targetLang) || targetLang,
+        });
+        translations[targetLang] = translationResult;
+      } catch (e) {
+          console.error(`Failed to translate for language ${targetLang}`, e);
+          toast({
+            variant: "destructive",
+            title: "Translation Failed",
+            description: "The AI could not process the translation. The message will be sent in its original language."
+          });
+      }
+    }
+
+    const newMessage: Omit<Message, 'id' | 'timestamp'> & { timestamp: null } = {
+      sender: {
+          uid: currentUser.uid,
+          name: currentUser.name,
+      },
+      senderLanguage: currentUser.language,
+      originalText: text,
+      timestamp: null, 
+      sentiment: sentimentResult.sentiment.toLowerCase() as Sentiment,
+      translations,
+    };
+    return newMessage;
+  }
+
+  const generatePreview = async (text: string, chatPartner: PublicUserProfile) => {
     setIsSending(true);
     try {
-      const sentimentResult = await analyzeMessageSentiment({ message: text });
-      
-      const translations: Record<string, TranslationDetail> = {};
-      const targetLang = chatPartner.language;
-
-      if (targetLang !== currentUser.language) {
-        try {
-          const translationResult = await translateMessage({
-            text,
-            sourceLanguage: getLanguageLabel(currentUser.language) || currentUser.language,
-            targetLanguage: getLanguageLabel(targetLang) || targetLang,
-          });
-          translations[targetLang] = translationResult;
-        } catch (e) {
-           console.error(`Failed to translate for language ${targetLang}`, e);
-           toast({
-             variant: "destructive",
-             title: "Translation Failed",
-             description: "The AI could not process the translation. Please try again."
-           });
-           // We can still proceed without the translation
-        }
+      const payload = await createMessagePayload(text, chatPartner);
+      if (payload) {
+        setPreviewMessage(payload as Message);
       }
-
-      const newMessage: Omit<Message, 'id' | 'timestamp'> & { timestamp: null } = {
-        sender: {
-            uid: currentUser.uid,
-            name: currentUser.name,
-        },
-        senderLanguage: currentUser.language,
-        originalText: text,
-        timestamp: null, // Will be replaced by server timestamp
-        sentiment: sentimentResult.sentiment.toLowerCase() as Sentiment,
-        translations,
-      };
-
-      setPreviewMessage(newMessage as Message);
     } catch (error) {
       console.error('Failed to generate preview:', error);
       toast({
@@ -115,6 +122,29 @@ export function GlobalTalkProvider({ children }: { children: ReactNode }) {
       });
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const sendMessage = async (text: string, chatPartner: PublicUserProfile) => {
+    if (!chatId) return;
+    setIsSending(true);
+    try {
+        const payload = await createMessagePayload(text, chatPartner);
+        if (payload) {
+            await addDoc(collection(firestore, 'chats', chatId, 'messages'), {
+                ...payload,
+                timestamp: serverTimestamp(),
+            });
+        }
+    } catch (error) {
+        console.error('Error sending message: ', error);
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Failed to send message.'
+        });
+    } finally {
+        setIsSending(false);
     }
   };
 
@@ -149,6 +179,7 @@ export function GlobalTalkProvider({ children }: { children: ReactNode }) {
       value={{
         messages,
         generatePreview,
+        sendMessage,
         confirmSendMessage,
         cancelPreview,
         previewMessage,
