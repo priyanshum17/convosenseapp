@@ -57,8 +57,8 @@ To run this project locally, you will need a Firebase project.
 
 ### 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd <repository-directory>
+git clone https://github.com/priyanshum17/convosenseapp
+cd convosenseapp
 ```
 
 ### 2. Install dependencies:
