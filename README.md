@@ -8,10 +8,10 @@ Seamlessly communicate across languages with real-time translation, sentiment an
 
 In our increasingly connected world, language barriers are a persistent challenge. Standard translation tools often fall short because they provide literal, word-for-word translations, failing to capture the subtle but critical elements of communication:
 
-*   **Context:** Direct translations can miss the implied meaning or cultural connotations of a phrase.
-*   **Tone:** A message that is neutral in one language might come across as blunt or rude in another.
-*   **Formality:** Using the wrong level of formality can lead to awkwardness or disrespect in social and professional settings.
-*   **Uncertainty:** Users are often left wondering if their translated message accurately conveys their true intent.
+*   **Context**: Direct translations can miss the implied meaning or cultural connotations of a phrase.
+*   **Tone**: A message that is neutral in one language might come across as blunt or rude in another.
+*   **Formality**: Using the wrong level of formality can lead to awkwardness or disrespect in social and professional settings.
+*   **Uncertainty**: Users are often left wondering if their translated message accurately conveys their true intent.
 
 ConvoSense was built to solve these problems. It's not just a translator; it's a communication partner that empowers you to connect with others confidently and accurately.
 
@@ -24,9 +24,9 @@ ConvoSense goes beyond literal translation. Powered by advanced AI, it analyzes 
 
 ### 2. Comprehensive Communication Insights
 For every message you send to a user speaking a different language, you have the option to review a detailed breakdown before sending. This feature provides:
-*   **Context Explanation:** Understand how cultural nuances and idioms were handled in the translation.
-*   **Tone Explanation:** See how your message will likely be perceived (e.g., friendly, formal, polite) to avoid unintentional miscommunication.
-*   **Formality Level:** Clearly see the formality level of the translated message, ensuring it's appropriate for your audience.
+*   **Context Explanation**: Understand how cultural nuances and idioms were handled in the translation.
+*   **Tone Explanation**: See how your message will likely be perceived (e.g., friendly, formal, polite) to avoid unintentional miscommunication.
+*   **Formality Level**: Clearly see the formality level of the translated message, ensuring it's appropriate for your audience.
 
 ### 3. Translation Verification
 The "Review & Send" feature gives you complete control. By reviewing the translation and its associated insights, you can feel confident that your message means exactly what you want it to mean before it's sent.
@@ -44,12 +44,19 @@ A green indicator shows which users are currently online, so you know who is ava
 
 ConvoSense is a modern, full-stack web application built with:
 
-*   **Framework:** Next.js (with App Router)
-*   **Language:** TypeScript
-*   **AI/Generative AI:** Google's Gemini Pro via Firebase Genkit
-*   **UI:** React, ShadCN UI Components, Tailwind CSS
-*   **Backend & Database:** Firebase (Firestore for real-time chat)
-*   **Deployment:** Firebase App Hosting
+*   **Framework**: Next.js (with App Router)
+*   **Language**: TypeScript
+*   **AI/Generative AI**: Google's Gemini Pro via Firebase Genkit
+*   **UI**: React, ShadCN UI Components, Tailwind CSS
+*   **Backend & Database**: Firebase (Firestore for real-time chat)
+*   **Deployment**: Firebase App Hosting
+
+## Architecture & UI Principles
+
+For a detailed explanation of the project's architecture and UI principles, please see the following documents:
+
+- [**Architecture.md**](docs/architecture.md)
+- [**UI_Principles.md**](docs/ui_principles.md)
 
 ## Getting Started
 
